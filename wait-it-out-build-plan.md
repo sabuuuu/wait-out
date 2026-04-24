@@ -1,4 +1,4 @@
-# 🎀 Wait It Out — Build Plan
+# 🎀 Pausy — Build Plan
 
 > Blush meets navy. Impulse meets patience. A cute little app that saves you from yourself.
 > **Colors:** `#F2C4CE` (blush pink) · `#062045` (deep navy)
@@ -10,8 +10,8 @@
 ### 0.1 Init the Expo app
 
 ```bash
-npx create-expo-app@latest wait-it-out --template blank-typescript
-cd wait-it-out
+npx create-expo-app@latest pausy --template blank-typescript
+cd pausy
 ```
 
 ### 0.2 Install core dependencies
@@ -252,7 +252,7 @@ create policy "users read own images"
 ## Phase 0.8 — Folder Structure
 
 ```
-wait-it-out/
+pausy/
 ├── app/
 │   ├── _layout.tsx                  # Root layout — fonts, theme, nav, auth gate
 │   ├── index.tsx                    # Redirect → onboarding or tabs
@@ -779,8 +779,8 @@ Notifications.setNotificationHandler({
 
 export async function requestPermissions() {
   if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync("wait-it-out", {
-      name:       "Wait It Out reminders",
+    await Notifications.setNotificationChannelAsync("pausy", {
+      name:       "Pausy reminders",
       importance: Notifications.AndroidImportance.HIGH,
     });
   }
@@ -1087,7 +1087,7 @@ export default function WaitingScreen() {
     <View className="flex-1 bg-cream">
       <View className="px-6 pt-16 pb-2 flex-row items-center justify-between">
         <View>
-          <Text className="text-2xl font-display text-navy-500">Wait It Out 🎀</Text>
+          <Text className="text-2xl font-display text-navy-500">Pausy 🎀</Text>
           <Text className="text-sm text-navy-300 mt-0.5">
             {items.length} {items.length === 1 ? "thing" : "things"} cooling off
           </Text>
@@ -2088,8 +2088,8 @@ eas submit
 ```json
 {
   "expo": {
-    "name":    "Wait It Out",
-    "slug":    "wait-it-out",
+    "name":    "Pausy",
+    "slug":    "pausy",
     "version": "1.0.0",
     "scheme":  "waitout",
     "icon":    "./assets/icon.png",
@@ -2104,7 +2104,7 @@ eas submit
         "color": "#F2C4CE"
       }],
       ["expo-image-picker", {
-        "photosPermission": "Wait It Out uses your photos to save screenshots of things you want."
+        "photosPermission": "Pausy uses your photos to save screenshots of things you want."
       }]
     ],
     "ios": {

@@ -7,22 +7,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/text";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Lock, User, ChevronRight, AlertCircle } from "lucide-react-native";
+import { Mail, Lock, User, ChevronRight } from "lucide-react-native";
+import { useAppStore } from "@/lib/store";
 
 export default function SignUp() {
+  const { showAlert } = useAppStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   async function handleSignUp() {
     if (!email || !password) return;
     setLoading(true);
-    setError(null);
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
+    const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -33,7 +33,7 @@ export default function SignUp() {
     });
 
     if (signUpError) {
-      setError(signUpError.message);
+      showAlert("Sign Up Failed", signUpError.message, "error");
       setLoading(false);
     } else {
       router.replace("/(tabs)");
@@ -112,13 +112,6 @@ export default function SignUp() {
                   />
                 </View>
               </View>
-
-              {error && (
-                <View className="flex-row items-center gap-2 bg-destructive/10 p-3 rounded-xl border border-destructive/20">
-                  <AlertCircle size={16} className="text-destructive" />
-                  <Text className="text-destructive text-sm flex-1">{error}</Text>
-                </View>
-              )}
 
               <Button
                 onPress={handleSignUp}

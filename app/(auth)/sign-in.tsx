@@ -10,51 +10,50 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Mail, Lock, ChevronRight, AlertCircle, Chrome } from "lucide-react-native";
 import * as WebBrowser from "expo-web-browser";
 import * as AuthSession from "expo-auth-session";
+import { useAppStore } from "@/lib/store";
 
 WebBrowser.maybeCompleteAuthSession();
 
 export default function SignIn() {
+  const { showAlert } = useAppStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   async function handleSignIn() {
     if (!email || !password) return;
     setLoading(true);
-    setError(null);
 
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-
+    
     if (signInError) {
-      setError(signInError.message);
-      setLoading(false);
+      showAlert("Sign In Failed", signInError.message, "error");
     } else {
       router.replace("/(tabs)");
     }
+    setLoading(false);
   }
 
   async function handleGoogleSignIn() {
     setLoading(true);
-    setError(null);
-    
     try {
-      const redirectUrl = AuthSession.makeRedirectUri();
-      const { data, error: authError } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+      const redirectUri = AuthSession.makeRedirectUri();
+      const { data, error: googleError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
         options: {
-          redirectTo: redirectUrl,
+          redirectTo: redirectUri,
           skipBrowserRedirect: true,
-        },
+        }
       });
 
-      if (authError) throw authError;
+      if (googleError) throw googleError;
+      if (!data?.url) throw new Error("No auth URL returned");
 
-      const res = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+      const res = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
 
       if (res.type === 'success' && res.url) {
         const { error: sessionError } = await supabase.auth.setSession({
@@ -65,7 +64,7 @@ export default function SignIn() {
         router.replace("/(tabs)");
       }
     } catch (e: any) {
-      setError(e.message);
+      showAlert("Google Sign In Error", e.message, "error");
     } finally {
       setLoading(false);
     }
@@ -83,7 +82,7 @@ export default function SignIn() {
             <View className="w-20 h-20 bg-primary/10 rounded-3xl items-center justify-center mb-4">
               <Lock size={40} color="hsl(var(--primary))" />
             </View>
-            <Text className="text-3xl font-display text-foreground text-center">Wait It Out</Text>
+            <Text className="text-3xl font-display text-foreground text-center">Pausy</Text>
             <Text className="text-muted-foreground text-center mt-2">Curb impulse spending today</Text>
           </View>
 
@@ -127,13 +126,6 @@ export default function SignIn() {
                   />
                 </View>
               </View>
-
-              {error && (
-                <View className="flex-row items-center gap-2 bg-destructive/10 p-3 rounded-xl border border-destructive/20">
-                  <AlertCircle size={16} className="text-destructive" />
-                  <Text className="text-destructive text-sm flex-1">{error}</Text>
-                </View>
-              )}
 
               <Button
                 onPress={handleSignIn}

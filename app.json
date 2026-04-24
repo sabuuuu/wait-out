@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "wait-out",
-    "slug": "wait-out",
+    "name": "Pausy",
+    "slug": "pausy",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "wait-out",
+    "scheme": "pausy",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/splash.png",

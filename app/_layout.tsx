@@ -18,6 +18,10 @@ import { NAV_THEME } from '@/lib/theme';
 import { registerNotificationCategories, requestPermissions } from '@/lib/notifications';
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { CustomAlert } from '@/components/CustomAlert';
+
+const queryClient = new QueryClient();
 
 SplashScreen.preventAutoHideAsync();
 
@@ -58,10 +62,24 @@ export default function RootLayout() {
   if (!loaded && !error) return null;
 
   return (
-    <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false }} />
-      <PortalHost />
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+        <Stack
+          screenOptions={{
+            headerBackTitle: 'Back',
+            headerTitleStyle: {
+              fontFamily: 'Outfit_700Bold',
+            },
+          }}
+        >
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)/sign-in" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)/sign-up" options={{ headerShown: false }} />
+        </Stack>
+        <PortalHost />
+        <CustomAlert />
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }

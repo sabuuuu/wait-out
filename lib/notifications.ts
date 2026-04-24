@@ -14,8 +14,8 @@ Notifications.setNotificationHandler({
 
 export async function requestPermissions() {
   if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync("wait-it-out", {
-      name: "Wait It Out reminders",
+    await Notifications.setNotificationChannelAsync("pausy", {
+      name: "Pausy reminders",
       importance: Notifications.AndroidImportance.HIGH,
     });
   }

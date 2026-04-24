@@ -18,13 +18,23 @@ interface AppStore {
   activeCollectionId: string | null;
   setActiveCollection: (id: string | null) => void;
 
+  // Alert
+  alert: {
+    visible: boolean;
+    title: string;
+    message: string;
+    type?: "info" | "error" | "success";
+  };
+  showAlert: (title: string, message: string, type?: "info" | "error" | "success") => void;
+  hideAlert: () => void;
+
   // Notification prefs
   notifPrefs:    NotificationPrefs | null;
   setNotifPrefs: (prefs: NotificationPrefs) => void;
 }
 
 export const useAppStore = create<AppStore>((set) => ({
-  items:       [],
+  items: [],
   setItems:    (items)       => set({ items }),
   upsertItem:  (item)        => set((s) => ({
     items: s.items.find((i) => i.id === item.id)
@@ -46,6 +56,12 @@ export const useAppStore = create<AppStore>((set) => ({
 
   activeCollectionId: null,
   setActiveCollection: (id)  => set({ activeCollectionId: id }),
+
+  alert: { visible: false, title: "", message: "", type: "info" },
+  showAlert: (title, message, type = "info") => 
+    set({ alert: { visible: true, title, message, type } }),
+  hideAlert: () => 
+    set((s) => ({ alert: { ...s.alert, visible: false } })),
 
   notifPrefs:    null,
   setNotifPrefs: (prefs)     => set({ notifPrefs: prefs }),
