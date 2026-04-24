@@ -39,7 +39,7 @@ export function SourceLinkInput({
   return (
     <Card className="bg-card border-none shadow-sm">
       <CardContent className="p-4">
-        <Text className="text-xs text-navy-300 font-semibold mb-3 uppercase tracking-wide">
+        <Text className="text-xs text-blue-300 font-semibold mb-3 uppercase tracking-wide">
           Source link (optional)
         </Text>
 
@@ -47,7 +47,7 @@ export function SourceLinkInput({
           <View className="mr-2">
             {!sourceUrl && !tiktokUrl && !instagramUrl && <Link size={18} className="text-muted-foreground" />}
             {sourceUrl && <Globe size={18} className="text-primary" />}
-            {tiktokUrl && <Video size={18} className="text-navy-500" />}
+            {tiktokUrl && <Video size={18} className="text-foreground" />}
             {instagramUrl && <Instagram size={18} className="text-pink-500" />}
           </View>
           <TextInput
@@ -57,7 +57,7 @@ export function SourceLinkInput({
             placeholderTextColor="#c4a0ab"
             autoCapitalize="none"
             keyboardType="url"
-            className="flex-1 text-navy-500 font-medium text-base h-10"
+            className="flex-1 text-foreground font-medium text-base h-10"
           />
         </View>
 
@@ -68,7 +68,7 @@ export function SourceLinkInput({
           <Text className="text-xs text-primary font-bold">
             {expanded ? "Hide individual links" : "Add multiple links"}
           </Text>
-          {expanded ? <ChevronUp size={14} color="hsl(var(--primary))" /> : <ChevronDown size={14} color="hsl(var(--primary))" />}
+          {expanded ? <ChevronUp size={14} color="#EEEBDA" /> : <ChevronDown size={14} color="#EEEBDA" />}
         </TouchableOpacity>
 
         {expanded && (

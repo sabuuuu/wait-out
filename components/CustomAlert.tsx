@@ -14,7 +14,7 @@ export function CustomAlert() {
     switch (alert.type) {
       case "error": return <AlertCircle size={32} className="text-destructive" />;
       case "success": return <CheckCircle2 size={32} className="text-primary" />;
-      default: return <Info size={32} className="text-navy-400" />;
+      default: return <Info size={32} className="text-primary" />;
     }
   };
 
@@ -35,7 +35,7 @@ export function CustomAlert() {
               {getIcon()}
             </View>
             
-            <Text className="text-2xl font-display text-navy-500 text-center mb-2">
+            <Text className="text-2xl font-display text-foreground text-center mb-2">
               {alert.title}
             </Text>
             
@@ -45,9 +45,9 @@ export function CustomAlert() {
             
             <Button 
               onPress={hideAlert}
-              className="w-full h-14 rounded-2xl bg-navy-500 shadow-lg shadow-navy-500/20"
+              className="w-full h-14 rounded-2xl bg-primary shadow-lg shadow-primary/20"
             >
-              <Text className="text-white font-bold text-lg">Got it!</Text>
+              <Text className="text-primary-foreground font-bold text-lg">Got it!</Text>
             </Button>
           </View>
         </View>

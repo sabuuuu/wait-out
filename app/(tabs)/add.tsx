@@ -115,9 +115,9 @@ export default function AddItem() {
     >
       <ScrollView className="flex-1 p-6" contentContainerStyle={{ paddingBottom: 100 }}>
         <View className="items-center mb-8">
-          <TouchableOpacity className="w-32 h-32 bg-muted rounded-[40px] items-center justify-center border-2 border-dashed border-blush-300">
-            <Camera size={32} className="text-blush-400" />
-            <Text className="text-blush-400 text-xs font-bold mt-2">Add Photo</Text>
+          <TouchableOpacity className="w-32 h-32 bg-muted rounded-[40px] items-center justify-center border-2 border-dashed border-cream-300">
+            <Camera size={32} className="text-cream-400" />
+            <Text className="text-cream-400 text-xs font-bold mt-2">Add Photo</Text>
           </TouchableOpacity>
         </View>
 
@@ -139,7 +139,7 @@ export default function AddItem() {
               <View className="flex-1 gap-2">
                 <Label nativeID="price-label">Price</Label>
                 <View className="relative">
-                  <Text className="absolute left-3 top-3.5 z-10 font-bold text-navy-300">€</Text>
+                  <Text className="absolute left-3 top-3.5 z-10 font-bold text-blue-300">€</Text>
                   <Input
                     placeholder="0.00"
                     value={price}
@@ -157,7 +157,7 @@ export default function AddItem() {
                   className="bg-card h-12 rounded-xl px-3 flex-row items-center justify-between"
                   onPress={() => {/* Show category picker modal */ }}
                 >
-                  <Text className="text-navy-500 font-medium">
+                  <Text className="text-foreground font-medium">
                     {collections.find(c => c.id === collectionId)?.name || "Select..."}
                   </Text>
                   <ChevronDown size={16} className="text-muted-foreground" />

@@ -1,18 +1,18 @@
 import React, { useState } from "react";
-import { View, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity } from "react-native";
+import { View, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, TextInput } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Text } from "@/components/ui/text";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Lock, ChevronRight, AlertCircle, Chrome } from "lucide-react-native";
+import { Chrome } from "lucide-react-native";
 import * as WebBrowser from "expo-web-browser";
 import * as AuthSession from "expo-auth-session";
 import { useAppStore } from "@/lib/store";
+import { Text } from "@/components/ui/text";
 
 WebBrowser.maybeCompleteAuthSession();
+
+// Colors mapping to match design-ex.md
+const INDIGO = "#282B4A";
+const PARCHMENT = "#EEEBDA";
 
 export default function SignIn() {
   const { showAlert } = useAppStore();
@@ -24,17 +24,9 @@ export default function SignIn() {
   async function handleSignIn() {
     if (!email || !password) return;
     setLoading(true);
-
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
-    if (signInError) {
-      showAlert("Sign In Failed", signInError.message, "error");
-    } else {
-      router.replace("/(tabs)");
-    }
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) showAlert("Sign In Failed", error.message, "error");
+    else router.replace("/(tabs)");
     setLoading(false);
   }
 
@@ -42,23 +34,18 @@ export default function SignIn() {
     setLoading(true);
     try {
       const redirectUri = AuthSession.makeRedirectUri();
-      const { data, error: googleError } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: {
-          redirectTo: redirectUri,
-          skipBrowserRedirect: true,
-        }
+        options: { redirectTo: redirectUri, skipBrowserRedirect: true },
       });
-
-      if (googleError) throw googleError;
+      if (error) throw error;
       if (!data?.url) throw new Error("No auth URL returned");
-
       const res = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
-
-      if (res.type === 'success' && res.url) {
+      if (res.type === "success" && res.url) {
+        const url = new URL(res.url);
         const { error: sessionError } = await supabase.auth.setSession({
-          access_token: new URL(res.url).searchParams.get('access_token') ?? '',
-          refresh_token: new URL(res.url).searchParams.get('refresh_token') ?? '',
+          access_token: url.searchParams.get("access_token") ?? "",
+          refresh_token: url.searchParams.get("refresh_token") ?? "",
         });
         if (sessionError) throw sessionError;
         router.replace("/(tabs)");
@@ -73,94 +60,95 @@ export default function SignIn() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-background"
+      className="flex-1 bg-[#EEEBDA]"
     >
-      <Stack.Screen options={{ title: "Sign In", headerShown: false }} />
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="p-6">
-        <View className="flex-1 justify-center">
-          <View className="items-center mb-8">
-            <View className="w-20 h-20 bg-primary/10 rounded-3xl items-center justify-center mb-4">
-              <Lock size={40} color="hsl(var(--primary))" />
-            </View>
-            <Text className="text-3xl font-display text-foreground text-center">Pausy</Text>
-            <Text className="text-muted-foreground text-center mt-2">Curb impulse spending today</Text>
+      <Stack.Screen options={{ headerShown: false }} />
+
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        className="px-6 pt-20 pb-12 z-10"
+      >
+        {/* Header */}
+        <View className="mb-6">
+          <Text className="text-5xl font-fancy text-[#282B4A]">Pausy</Text>
+          <Text className="text-[13px] text-[#282B4A]/40 font-medium mt-2">Welcome back — your waiting room is ready.</Text>
+        </View>
+
+        {/* Login Form */}
+        <View className="space-y-4">
+          {/* Email Input */}
+          <View className="mb-4">
+            <TextInput
+              className="w-full h-14 bg-[#282B4A]/[0.07] border border-[#282B4A]/[0.15] rounded-2xl px-5 text-[#282B4A] text-base"
+              placeholder="you@example.com"
+              placeholderTextColor="rgba(40,43,74,0.35)"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
           </View>
 
-          <Card className="border-none shadow-none bg-card/50">
-            <CardHeader>
-              <CardTitle>Welcome Back</CardTitle>
-              <CardDescription>Sign in to your account</CardDescription>
-            </CardHeader>
-            <CardContent className="gap-4">
-              <View className="gap-2">
-                <Label nativeID="email-label">Email</Label>
-                <View className="relative">
-                  <View className="absolute left-3 top-3 z-10">
-                    <Mail size={18} className="text-muted-foreground" />
-                  </View>
-                  <Input
-                    className="pl-10"
-                    placeholder="name@example.com"
-                    value={email}
-                    onChangeText={setEmail}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    aria-labelledby="email-label"
-                  />
-                </View>
-              </View>
+          {/* Password Input */}
+          <View className="mb-4">
+            <TextInput
+              className="w-full h-14 bg-[#282B4A]/[0.07] border border-[#282B4A]/[0.15] rounded-2xl px-5 text-[#282B4A] text-base"
+              placeholder="••••••••"
+              placeholderTextColor="rgba(40,43,74,0.35)"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+          </View>
 
-              <View className="gap-2">
-                <Label nativeID="password-label">Password</Label>
-                <View className="relative">
-                  <View className="absolute left-3 top-3 z-10">
-                    <Lock size={18} className="text-muted-foreground" />
-                  </View>
-                  <Input
-                    className="pl-10"
-                    placeholder="••••••••"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                    aria-labelledby="password-label"
-                  />
-                </View>
-              </View>
+          {/* Forgot Password */}
+          <View className="flex-row justify-end mb-4">
+            <TouchableOpacity>
+              <Text className="text-[11px] text-[#282B4A]/45 underline font-medium">Forgot password?</Text>
+            </TouchableOpacity>
+          </View>
 
-              <Button
-                onPress={handleSignIn}
-                disabled={loading || !email || !password}
-                className="mt-2"
-              >
-                <Text className="text-primary-foreground font-semibold">Sign In</Text>
-                <ChevronRight size={18} className="text-primary-foreground ml-2" />
-              </Button>
-
-              <View className="flex-row items-center gap-4 my-2">
-                <View className="flex-1 h-[1px] bg-border" />
-                <Text className="text-muted-foreground text-xs uppercase">or continue with</Text>
-                <View className="flex-1 h-[1px] bg-border" />
-              </View>
-
-              <Button
-                variant="outline"
-                onPress={handleGoogleSignIn}
-                disabled={loading}
-                className="flex-row gap-3"
-              >
-                <Chrome size={18} color="hsl(var(--foreground))" />
-                <Text>Google</Text>
-              </Button>
-            </CardContent>
-            <CardFooter className="justify-center">
-              <TouchableOpacity onPress={() => router.push("/(auth)/sign-up")}>
-                <Text className="text-sm text-muted-foreground">
-                  Don't have an account? <Text className="text-primary font-semibold">Sign Up</Text>
-                </Text>
-              </TouchableOpacity>
-            </CardFooter>
-          </Card>
+          {/* Primary Action */}
+          <TouchableOpacity
+            className={`w-full h-[52px] bg-[#282B4A] rounded-2xl items-center justify-center ${(loading || !email || !password) ? 'opacity-50' : 'opacity-100'}`}
+            onPress={handleSignIn}
+            disabled={loading || !email || !password}
+            activeOpacity={0.85}
+          >
+            <Text className="text-[#EEEBDA] font-semibold text-[14px]">Sign in</Text>
+          </TouchableOpacity>
         </View>
+
+        {/* Divider */}
+        <View className="flex-row items-center my-6">
+          <View className="flex-1 h-[1px] bg-[#282B4A]/10" />
+          <Text className="px-4 text-[11px] text-[#282B4A]/30 font-medium uppercase tracking-widest">or</Text>
+          <View className="flex-1 h-[1px] bg-[#282B4A]/10" />
+        </View>
+
+        {/* Social Auth */}
+        <TouchableOpacity
+          className="w-full h-[52px] border border-[#282B4A]/[0.2] bg-transparent rounded-2xl flex-row items-center justify-center gap-3"
+          onPress={handleGoogleSignIn}
+          disabled={loading}
+          activeOpacity={0.75}
+        >
+          <Chrome size={20} color={INDIGO} />
+          <Text className="text-[#282B4A] font-semibold text-[14px]">Continue with Google</Text>
+        </TouchableOpacity>
+
+        {/* Footer */}
+        <View className="mt-auto pt-8 flex-row justify-center">
+          <Text className="text-[11px] text-[#282B4A]/50 font-medium">Don't have an account? </Text>
+          <TouchableOpacity onPress={() => router.push("/(auth)/sign-up")}>
+            <Text className="text-[11px] text-[#282B4A] underline font-bold">Sign up</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Bottom Margin Safe Area */}
+        <View className="h-8" />
       </ScrollView>
     </KeyboardAvoidingView>
   );

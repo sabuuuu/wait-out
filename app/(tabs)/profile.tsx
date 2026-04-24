@@ -39,9 +39,9 @@ export default function Profile() {
     <ScrollView className="flex-1 bg-background">
       <View className="p-6 pt-12 items-center">
         <View className="w-24 h-24 bg-primary/10 rounded-full items-center justify-center mb-4">
-          <User size={48} color="hsl(var(--primary))" />
+          <User size={48} color="#EEEBDA" />
         </View>
-        <Text className="text-2xl font-display text-navy-500">{displayName}</Text>
+        <Text className="text-2xl font-display text-foreground">{displayName}</Text>
         <Text className="text-muted-foreground">{email}</Text>
 
         <Button variant="outline" className="mt-4 px-6 rounded-full border-primary h-10">
@@ -52,13 +52,13 @@ export default function Profile() {
       <View className="p-6 gap-6">
         {/* Account Settings */}
         <View className="gap-3">
-          <Text className="text-xs font-bold text-navy-300 uppercase ml-1">Account</Text>
+          <Text className="text-xs font-bold text-blue-300 uppercase ml-1">Account</Text>
           <Card className="border-none shadow-sm">
             <CardContent className="p-0">
               <TouchableOpacity className="flex-row items-center justify-between p-4 border-b border-muted">
                 <View className="flex-row items-center gap-3">
-                  <CreditCard size={20} className="text-navy-300" />
-                  <Text className="text-navy-500 font-medium">Currency Settings</Text>
+                  <CreditCard size={20} className="text-blue-300" />
+                  <Text className="text-foreground font-medium">Currency Settings</Text>
                 </View>
                 <View className="flex-row items-center gap-2">
                   <Text className="text-muted-foreground text-sm">EUR (€)</Text>
@@ -67,8 +67,8 @@ export default function Profile() {
               </TouchableOpacity>
               <TouchableOpacity className="flex-row items-center justify-between p-4">
                 <View className="flex-row items-center gap-3">
-                  <Shield size={20} className="text-navy-300" />
-                  <Text className="text-navy-500 font-medium">Privacy & Security</Text>
+                  <Shield size={20} className="text-blue-300" />
+                  <Text className="text-foreground font-medium">Privacy & Security</Text>
                 </View>
                 <ChevronRight size={16} className="text-muted-foreground" />
               </TouchableOpacity>
@@ -78,20 +78,20 @@ export default function Profile() {
 
         {/* Notifications */}
         <View className="gap-3">
-          <Text className="text-xs font-bold text-navy-300 uppercase ml-1">Notifications</Text>
+          <Text className="text-xs font-bold text-blue-300 uppercase ml-1">Notifications</Text>
           <Card className="border-none shadow-sm">
             <CardContent className="p-0">
               <View className="flex-row items-center justify-between p-4 border-b border-muted">
                 <View className="flex-row items-center gap-3">
-                  <Bell size={20} className="text-navy-300" />
-                  <Text className="text-navy-500 font-medium">Global Reminders</Text>
+                  <Bell size={20} className="text-blue-300" />
+                  <Text className="text-foreground font-medium">Global Reminders</Text>
                 </View>
                 <Switch value={true} onValueChange={() => { }} />
               </View>
               <View className="flex-row items-center justify-between p-4">
                 <View className="flex-row items-center gap-3">
-                  <Moon size={20} className="text-navy-300" />
-                  <Text className="text-navy-500 font-medium">Quiet Hours</Text>
+                  <Moon size={20} className="text-blue-300" />
+                  <Text className="text-foreground font-medium">Quiet Hours</Text>
                 </View>
                 <Text className="text-muted-foreground text-sm">22:00 - 08:00</Text>
               </View>

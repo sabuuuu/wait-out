@@ -8,57 +8,56 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        blush: {
-          50:  "#fef6f8",
-          100: "#fde8ee",
-          200: "#f9c9d6",
-          300: "#F2C4CE",   // ← primary blush
-          400: "#e8a0b0",
-          500: "#d97b92",
-          600: "#c45570",
+        cream: {
+          50:  "#FDFDFC",
+          100: "#FAF8F3",
+          200: "#F3F0E6",
+          300: "#EEEBDA",   // ← primary cream
+          400: "#E1DDC3",
+          500: "#D0CAAA",
+          600: "#BCB48E",
         },
-        navy: {
-          50:  "#e8edf5",
-          100: "#c2cedf",
-          200: "#8ba3c2",
-          300: "#4d72a0",
-          400: "#1f4a7c",
-          500: "#062045",   // ← primary navy
-          600: "#041530",
+        blue: {
+          50:  "#EAEBF0",
+          100: "#CED0DE",
+          200: "#ADB1C9",
+          300: "#898FB2",
+          400: "#686F9A",
+          500: "#484F81",
+          600: "#282B4A",   // ← primary blue
         },
-        cream: "#fdf8f5",
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
+        border: '#383B5C',
+        input: '#383B5C',
+        ring: '#EEEBDA',
+        background: '#282B4A',
+        foreground: '#EEEBDA',
         primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
+          DEFAULT: '#EEEBDA',
+          foreground: '#282B4A',
         },
         secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
+          DEFAULT: '#383B5C',
+          foreground: '#EEEBDA',
         },
         destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
+          DEFAULT: '#ef4444',
+          foreground: '#ffffff',
         },
         muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
+          DEFAULT: '#383B5C',
+          foreground: '#B8B4A2',
         },
         accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
+          DEFAULT: '#383B5C',
+          foreground: '#EEEBDA',
         },
         popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
+          DEFAULT: '#383B5C',
+          foreground: '#EEEBDA',
         },
         card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
+          DEFAULT: '#383B5C',
+          foreground: '#EEEBDA',
         },
       },
       fontFamily: {
@@ -67,6 +66,7 @@ module.exports = {
         semibold:["Outfit_600SemiBold"],
         bold:    ["Outfit_700Bold"],
         display: ["Outfit_800ExtraBold"],
+        fancy:   ["PlayfairDisplay_700Bold_Italic"],
       },
       borderRadius: {
         "2xl": "16px",

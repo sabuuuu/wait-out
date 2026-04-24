@@ -1,14 +1,9 @@
 import React, { useState } from "react";
-import { View, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity } from "react-native";
+import { View, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, TextInput } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Text } from "@/components/ui/text";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Lock, User, ChevronRight } from "lucide-react-native";
 import { useAppStore } from "@/lib/store";
+import { Text } from "@/components/ui/text";
 
 export default function SignUp() {
   const { showAlert } = useAppStore();
@@ -43,94 +38,81 @@ export default function SignUp() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-background"
+      className="flex-1 bg-[#EEEBDA]"
     >
-      <Stack.Screen options={{ title: "Sign Up", headerShown: false }} />
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="p-6">
-        <View className="flex-1 justify-center">
-          <View className="items-center mb-8">
-            <View className="w-20 h-20 bg-primary/10 rounded-3xl items-center justify-center mb-4">
-              <User size={40} color="hsl(var(--primary))" />
-            </View>
-            <Text className="text-3xl font-display text-foreground text-center">Create Account</Text>
-            <Text className="text-muted-foreground text-center mt-2">Start your journey to intentional spending</Text>
+      <Stack.Screen options={{ headerShown: false }} />
+
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        className="px-6 pt-20 pb-12 z-10"
+      >
+        {/* Header */}
+        <View className="mb-6">
+          <Text className="text-5xl font-fancy text-[#282B4A]">Pausy</Text>
+          <Text className="text-[13px] text-[#282B4A]/40 font-medium mt-2">Create an account — start spending intentionally.</Text>
+        </View>
+
+        {/* Sign Up Form */}
+        <View className="space-y-4">
+          {/* Full Name Input */}
+          <View className="mb-4">
+            <TextInput
+              className="w-full h-14 bg-[#282B4A]/[0.07] border border-[#282B4A]/[0.15] rounded-2xl px-5 text-[#282B4A] text-base"
+              placeholder="Full Name"
+              placeholderTextColor="rgba(40,43,74,0.35)"
+              value={fullName}
+              onChangeText={setFullName}
+            />
           </View>
 
-          <Card className="border-none shadow-none bg-card/50">
-            <CardHeader>
-              <CardTitle>Get Started</CardTitle>
-              <CardDescription>Enter your details to create an account</CardDescription>
-            </CardHeader>
-            <CardContent className="gap-4">
-              <View className="gap-2">
-                <Label nativeID="name-label">Full Name</Label>
-                <View className="relative">
-                  <View className="absolute left-3 top-3 z-10">
-                    <User size={18} className="text-muted-foreground" />
-                  </View>
-                  <Input
-                    className="pl-10"
-                    placeholder="Jane Doe"
-                    value={fullName}
-                    onChangeText={setFullName}
-                    aria-labelledby="name-label"
-                  />
-                </View>
-              </View>
+          {/* Email Input */}
+          <View className="mb-4">
+            <TextInput
+              className="w-full h-14 bg-[#282B4A]/[0.07] border border-[#282B4A]/[0.15] rounded-2xl px-5 text-[#282B4A] text-base"
+              placeholder="you@example.com"
+              placeholderTextColor="rgba(40,43,74,0.35)"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+          </View>
 
-              <View className="gap-2">
-                <Label nativeID="email-label">Email</Label>
-                <View className="relative">
-                  <View className="absolute left-3 top-3 z-10">
-                    <Mail size={18} className="text-muted-foreground" />
-                  </View>
-                  <Input
-                    className="pl-10"
-                    placeholder="name@example.com"
-                    value={email}
-                    onChangeText={setEmail}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    aria-labelledby="email-label"
-                  />
-                </View>
-              </View>
+          {/* Password Input */}
+          <View className="mb-4">
+            <TextInput
+              className="w-full h-14 bg-[#282B4A]/[0.07] border border-[#282B4A]/[0.15] rounded-2xl px-5 text-[#282B4A] text-base"
+              placeholder="••••••••"
+              placeholderTextColor="rgba(40,43,74,0.35)"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+          </View>
 
-              <View className="gap-2">
-                <Label nativeID="password-label">Password</Label>
-                <View className="relative">
-                  <View className="absolute left-3 top-3 z-10">
-                    <Lock size={18} className="text-muted-foreground" />
-                  </View>
-                  <Input
-                    className="pl-10"
-                    placeholder="••••••••"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                    aria-labelledby="password-label"
-                  />
-                </View>
-              </View>
-
-              <Button
-                onPress={handleSignUp}
-                disabled={loading || !email || !password}
-                className="mt-2"
-              >
-                <Text className="text-primary-foreground font-semibold">Create Account</Text>
-                <ChevronRight size={18} className="text-primary-foreground ml-2" />
-              </Button>
-            </CardContent>
-            <CardFooter className="justify-center">
-              <TouchableOpacity onPress={() => router.push("/(auth)/sign-in")}>
-                <Text className="text-sm text-muted-foreground">
-                  Already have an account? <Text className="text-primary font-semibold">Sign In</Text>
-                </Text>
-              </TouchableOpacity>
-            </CardFooter>
-          </Card>
+          {/* Primary Action */}
+          <TouchableOpacity
+            className={`w-full h-[52px] bg-[#282B4A] rounded-2xl items-center justify-center mt-2 ${(loading || !email || !password) ? 'opacity-50' : 'opacity-100'}`}
+            onPress={handleSignUp}
+            disabled={loading || !email || !password}
+            activeOpacity={0.85}
+          >
+            <Text className="text-[#EEEBDA] font-semibold text-[14px]">Create Account</Text>
+          </TouchableOpacity>
         </View>
+
+        {/* Footer */}
+        <View className="mt-auto pt-8 flex-row justify-center">
+          <Text className="text-[11px] text-[#282B4A]/50 font-medium">Already have an account? </Text>
+          <TouchableOpacity onPress={() => router.push("/(auth)/sign-in")}>
+            <Text className="text-[11px] text-[#282B4A] underline font-bold">Sign in</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Bottom Margin Safe Area */}
+        <View className="h-8" />
       </ScrollView>
     </KeyboardAvoidingView>
   );

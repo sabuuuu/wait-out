@@ -11,6 +11,7 @@ import {
   Outfit_700Bold,
   Outfit_800ExtraBold,
 } from "@expo-google-fonts/outfit";
+import { PlayfairDisplay_700Bold_Italic } from "@expo-google-fonts/playfair-display";
 import * as SplashScreen from "expo-splash-screen";
 import { PortalHost } from '@rn-primitives/portal';
 import { useColorScheme } from 'nativewind';
@@ -34,6 +35,7 @@ export default function RootLayout() {
     Outfit_600SemiBold,
     Outfit_700Bold,
     Outfit_800ExtraBold,
+    PlayfairDisplay_700Bold_Italic,
   });
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 # 🎀 Pausy — Build Plan
 
-> Blush meets navy. Impulse meets patience. A cute little app that saves you from yourself.
-> **Colors:** `#F2C4CE` (blush pink) · `#062045` (deep navy)
+> Midnight meets bone. Impulse meets patience. A cute little app that saves you from yourself.
+> **Colors:** `#EEEBDA` (bone cream) · `#282B4A` (midnight blue)
 
 ---
 
@@ -58,88 +58,6 @@ npm install nanoid
 
 # Auth (Google)
 npx expo install expo-auth-session expo-crypto
-```
-
-### 0.3 Configure NativeWind
-
-```js
-// tailwind.config.js
-/** @type {import('tailwindcss').Config} */
-module.exports = {
-  content: [
-    "./app/**/*.{js,jsx,ts,tsx}",
-    "./components/**/*.{js,jsx,ts,tsx}",
-    "./lib/**/*.{js,jsx,ts,tsx}",
-  ],
-  presets: [require("nativewind/preset")],
-  theme: {
-    extend: {
-      colors: {
-        blush: {
-          50:  "#fef6f8",
-          100: "#fde8ee",
-          200: "#f9c9d6",
-          300: "#F2C4CE",   // ← primary blush
-          400: "#e8a0b0",
-          500: "#d97b92",
-          600: "#c45570",
-        },
-        navy: {
-          50:  "#e8edf5",
-          100: "#c2cedf",
-          200: "#8ba3c2",
-          300: "#4d72a0",
-          400: "#1f4a7c",
-          500: "#062045",   // ← primary navy
-          600: "#041530",
-        },
-        cream: "#fdf8f5",
-      },
-      fontFamily: {
-        sans:    ["Outfit_400Regular"],
-        medium:  ["Outfit_500Medium"],
-        semibold:["Outfit_600SemiBold"],
-        bold:    ["Outfit_700Bold"],
-        display: ["Outfit_800ExtraBold"],
-      },
-      borderRadius: {
-        "2xl": "16px",
-        "3xl": "24px",
-        "4xl": "32px",
-      },
-    },
-  },
-  plugins: [],
-};
-```
-
-```js
-// babel.config.js
-module.exports = function (api) {
-  api.cache(true);
-  return {
-    presets: [
-      ["babel-preset-expo", { jsxImportSource: "nativewind" }],
-      "nativewind/babel",
-    ],
-  };
-};
-```
-
-```ts
-// metro.config.js
-const { getDefaultConfig } = require("expo/metro-config");
-const { withNativeWind } = require("nativewind/metro");
-
-const config = getDefaultConfig(__dirname);
-module.exports = withNativeWind(config, { input: "./global.css" });
-```
-
-```css
-/* global.css */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 ```
 
 ### 0.4 Load fonts (Outfit)

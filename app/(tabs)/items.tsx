@@ -70,7 +70,7 @@ export default function Items() {
             <TouchableOpacity 
               key={filter.value}
               onPress={() => setStatusFilter(filter.value)}
-              className={`flex-1 py-2 rounded-xl items-center border ${statusFilter === filter.value ? 'bg-blush-100 border-blush-300' : 'bg-transparent border-transparent'}`}
+              className={`flex-1 py-2 rounded-xl items-center border ${statusFilter === filter.value ? 'bg-secondary border-cream-300' : 'bg-transparent border-transparent'}`}
             >
               <Text className={`text-xs font-bold ${statusFilter === filter.value ? 'text-primary' : 'text-muted-foreground'}`}>
                 {filter.label}
@@ -111,12 +111,12 @@ export default function Items() {
               <View className="flex-row">
                 <View className="w-24 h-24 bg-muted items-center justify-center">
                   {item.status === 'waiting' && <Timer size={30} className="text-primary" />}
-                  {item.status === 'bought' && <ShoppingBag size={30} className="text-navy-300" />}
+                  {item.status === 'bought' && <ShoppingBag size={30} className="text-blue-300" />}
                   {item.status === 'forgot' && <Ghost size={30} className="text-muted-foreground" />}
                 </View>
                 <View className="flex-1 p-3 justify-between">
                   <View>
-                    <Text numberOfLines={1} className="text-navy-500 font-bold text-base">{item.title}</Text>
+                    <Text numberOfLines={1} className="text-foreground font-bold text-base">{item.title}</Text>
                     <Text className="text-muted-foreground text-xs mt-0.5">
                       Added {new Date(item.added_at).toLocaleDateString()}
                     </Text>

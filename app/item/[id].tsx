@@ -77,12 +77,12 @@ export default function ItemDetail() {
           title: "Item Details",
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()} className="ml-2">
-              <ChevronLeft size={24} className="text-navy-500" />
+              <ChevronLeft size={24} className="text-foreground" />
             </TouchableOpacity>
           ),
           headerRight: () => (
             <TouchableOpacity onPress={handleShare} className="mr-2">
-              <Share2 size={20} className="text-navy-500" />
+              <Share2 size={20} className="text-foreground" />
             </TouchableOpacity>
           ),
         }}
@@ -90,14 +90,14 @@ export default function ItemDetail() {
 
       {/* Hero Section */}
       <View className="h-64 bg-muted items-center justify-center relative">
-        <View className="bg-white/50 p-6 rounded-[40px]">
+        <View className="bg-card/50 p-6 rounded-[40px]">
           {item.status === 'waiting' && <Timer size={64} className="text-primary" />}
-          {item.status === 'bought' && <ShoppingBag size={64} className="text-navy-300" />}
+          {item.status === 'bought' && <ShoppingBag size={64} className="text-blue-300" />}
           {item.status === 'forgot' && <Ghost size={64} className="text-muted-foreground" />}
         </View>
 
         {/* Status Badge */}
-        <View className="absolute bottom-6 right-6 bg-navy-500 px-4 py-2 rounded-2xl">
+        <View className="absolute bottom-6 right-6 bg-blue-500 px-4 py-2 rounded-2xl">
           <Text className="text-white font-bold text-xs uppercase tracking-widest">{item.status}</Text>
         </View>
       </View>
@@ -105,10 +105,10 @@ export default function ItemDetail() {
       <View className="p-6 -mt-8 bg-background rounded-t-[40px]">
         <View className="flex-row justify-between items-start mb-4">
           <View className="flex-1 mr-4">
-            <Text className="text-2xl font-display text-navy-500">{item.title}</Text>
+            <Text className="text-2xl font-display text-foreground">{item.title}</Text>
             <Text className="text-primary text-2xl font-bold mt-1">{item.currency}{item.price}</Text>
           </View>
-          <View className="bg-blush-100 px-3 py-1.5 rounded-xl">
+          <View className="bg-secondary px-3 py-1.5 rounded-xl">
             <Text className="text-primary font-bold text-xs uppercase">{item.delay_type}</Text>
           </View>
         </View>
@@ -130,10 +130,10 @@ export default function ItemDetail() {
           <CardContent className="p-5">
             <View className="flex-row items-center justify-between mb-3">
               <View className="flex-row items-center gap-2">
-                <Clock size={16} className="text-navy-300" />
-                <Text className="text-navy-300 font-bold text-xs uppercase">Time Left</Text>
+                <Clock size={16} className="text-blue-300" />
+                <Text className="text-blue-300 font-bold text-xs uppercase">Time Left</Text>
               </View>
-              <Text className="text-navy-500 font-bold">
+              <Text className="text-foreground font-bold">
                 {isExpired ? "Time to decide!" : "Waiting..."}
               </Text>
             </View>
@@ -150,26 +150,26 @@ export default function ItemDetail() {
         {/* Notes */}
         {item.notes && (
           <View className="mb-6">
-            <Text className="text-xs text-navy-300 font-bold uppercase mb-2 ml-1">Your Thoughts</Text>
-            <Text className="text-navy-500 italic leading-5">"{item.notes}"</Text>
+            <Text className="text-xs text-blue-300 font-bold uppercase mb-2 ml-1">Your Thoughts</Text>
+            <Text className="text-foreground italic leading-5">"{item.notes}"</Text>
           </View>
         )}
 
         {/* Links */}
         {(item.source_url || item.tiktok_url || item.instagram_url) && (
           <View className="mb-8">
-            <Text className="text-xs text-navy-300 font-bold uppercase mb-3 ml-1">Sources</Text>
+            <Text className="text-xs text-blue-300 font-bold uppercase mb-3 ml-1">Sources</Text>
             <View className="flex-row flex-wrap gap-2">
               {item.source_url && (
                 <TouchableOpacity onPress={() => openLink(item.source_url)} className="flex-row items-center bg-muted px-4 py-2 rounded-xl">
-                  <ExternalLink size={14} className="text-navy-500 mr-2" />
-                  <Text className="text-navy-500 font-bold text-xs">Website</Text>
+                  <ExternalLink size={14} className="text-foreground mr-2" />
+                  <Text className="text-foreground font-bold text-xs">Website</Text>
                 </TouchableOpacity>
               )}
               {item.tiktok_url && (
                 <TouchableOpacity onPress={() => openLink(item.tiktok_url)} className="flex-row items-center bg-muted px-4 py-2 rounded-xl">
-                  <ExternalLink size={14} className="text-navy-500 mr-2" />
-                  <Text className="text-navy-500 font-bold text-xs">TikTok</Text>
+                  <ExternalLink size={14} className="text-foreground mr-2" />
+                  <Text className="text-foreground font-bold text-xs">TikTok</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -180,15 +180,15 @@ export default function ItemDetail() {
         <View className="gap-3 mt-4">
           <Button
             variant="outline"
-            className="h-14 rounded-2xl border-navy-500"
+            className="h-14 rounded-2xl border-blue-500"
             onPress={() => handleDecision('bought')}
           >
-            <ShoppingBag size={20} className="text-navy-500 mr-2" />
-            <Text className="text-navy-500 font-bold text-base">I bought it</Text>
+            <ShoppingBag size={20} className="text-foreground mr-2" />
+            <Text className="text-foreground font-bold text-base">I bought it</Text>
           </Button>
 
           <Button
-            className="h-14 rounded-2xl bg-navy-500"
+            className="h-14 rounded-2xl bg-blue-500"
             onPress={() => handleDecision('forgot')}
           >
             <Ghost size={20} className="text-white mr-2" />
