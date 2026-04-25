@@ -1,11 +1,14 @@
 import React, { useState } from "react";
-import { View, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, TextInput } from "react-native";
+import { View, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Stack, useRouter } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { useAppStore } from "@/lib/store";
 import { Text } from "@/components/ui/text";
+import { Input } from "@/components/ui/input";
 
 export default function SignUp() {
+  const insets = useSafeAreaInsets();
   const { showAlert } = useAppStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,10 +46,14 @@ export default function SignUp() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={{ 
+          flexGrow: 1,
+          paddingTop: Math.max(insets.top, 60),
+          paddingBottom: Math.max(insets.bottom, 20)
+        }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        className="px-6 pt-20 pb-12 z-10"
+        className="px-6 z-10"
       >
         {/* Header */}
         <View className="mb-6">
@@ -58,8 +65,8 @@ export default function SignUp() {
         <View className="space-y-4">
           {/* Full Name Input */}
           <View className="mb-4">
-            <TextInput
-              className="w-full h-14 bg-[#282B4A]/[0.07] border border-[#282B4A]/[0.15] rounded-2xl px-5 text-[#282B4A] text-base"
+            <Input
+              className="w-full h-14 bg-[#282B4A]/[0.07] border border-[#282B4A]/[0.15] rounded-2xl px-5 text-[#282B4A] text-base font-sans"
               placeholder="Full Name"
               placeholderTextColor="rgba(40,43,74,0.35)"
               value={fullName}
@@ -69,8 +76,8 @@ export default function SignUp() {
 
           {/* Email Input */}
           <View className="mb-4">
-            <TextInput
-              className="w-full h-14 bg-[#282B4A]/[0.07] border border-[#282B4A]/[0.15] rounded-2xl px-5 text-[#282B4A] text-base"
+            <Input
+              className="w-full h-14 bg-[#282B4A]/[0.07] border border-[#282B4A]/[0.15] rounded-2xl px-5 text-[#282B4A] text-base font-sans"
               placeholder="you@example.com"
               placeholderTextColor="rgba(40,43,74,0.35)"
               value={email}
@@ -82,8 +89,8 @@ export default function SignUp() {
 
           {/* Password Input */}
           <View className="mb-4">
-            <TextInput
-              className="w-full h-14 bg-[#282B4A]/[0.07] border border-[#282B4A]/[0.15] rounded-2xl px-5 text-[#282B4A] text-base"
+            <Input
+              className="w-full h-14 bg-[#282B4A]/[0.07] border border-[#282B4A]/[0.15] rounded-2xl px-5 text-[#282B4A] text-base font-sans"
               placeholder="••••••••"
               placeholderTextColor="rgba(40,43,74,0.35)"
               value={password}
@@ -117,3 +124,4 @@ export default function SignUp() {
     </KeyboardAvoidingView>
   );
 }
+

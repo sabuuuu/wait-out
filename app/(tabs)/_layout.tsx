@@ -11,21 +11,21 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: "gray",
+        tabBarActiveTintColor: "#282B4A",
+        tabBarInactiveTintColor: "rgba(40,43,74,0.3)",
         tabBarStyle: {
-          backgroundColor: theme.colors.card,
-          borderTopColor: theme.colors.border,
+          backgroundColor: "#EEEBDA",
+          borderTopColor: "rgba(40,43,74,0.08)",
           height: 60,
           paddingBottom: 8,
           paddingTop: 8,
         },
         headerStyle: {
-          backgroundColor: theme.colors.background,
+          backgroundColor: "#EEEBDA",
         },
         headerTitleStyle: {
           fontFamily: "Outfit_700Bold",
-          color: theme.colors.text,
+          color: "#282B4A",
         },
         headerShadowVisible: false,
       }}
@@ -33,7 +33,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Dashboard",
+          title: "Home",
+          headerShown: false,
           tabBarIcon: ({ color, size }) => <LayoutDashboard color={color} size={size} />,
         }}
       />
@@ -41,6 +42,7 @@ export default function TabsLayout() {
         name="items"
         options={{
           title: "Waiting List",
+          headerShown: false,
           tabBarIcon: ({ color, size }) => <List color={color} size={size} />,
         }}
       />
@@ -48,6 +50,7 @@ export default function TabsLayout() {
         name="add"
         options={{
           title: "Add Item",
+          headerShown: false,
           tabBarIcon: ({ color, size }) => <PlusCircle color={color} size={size} />,
         }}
       />
@@ -55,6 +58,7 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: "Profile",
+          headerShown: false,
           tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
         }}
       />

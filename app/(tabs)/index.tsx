@@ -1,13 +1,11 @@
-import React, { useMemo } from "react";
-import { View, ScrollView, TouchableOpacity, Dimensions } from "react-native";
+import React, { useMemo, useState, useEffect } from "react";
+import { View, ScrollView, TouchableOpacity } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text } from "@/components/ui/text";
-import { Card, CardContent } from "@/components/ui/card";
-import { useAppStore } from "@/lib/store";
-import { LayoutDashboard, Wallet, Heart, ArrowRight, ShieldAlert, Timer, PlusCircle } from "lucide-react-native";
+import { ArrowRight, Timer, PlusCircle, ShieldAlert, Sparkles } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useItems } from "@/hooks/useItems";
-
-const { width } = Dimensions.get("window");
+import { supabase } from "@/lib/supabase";
 
 const WISDOM = [
   "Sleep on it. If you still want it in 3 days, it might be meant for you.",
@@ -18,11 +16,22 @@ const WISDOM = [
 ];
 
 export default function Dashboard() {
+  const insets = useSafeAreaInsets();
   const { items } = useItems();
   const router = useRouter();
+  const [firstName, setFirstName] = useState("");
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        const name = user.user_metadata?.full_name ?? "";
+        setFirstName(name.split(" ")[0] || "there");
+      }
+    });
+  }, []);
 
   const waitingItems = useMemo(() => items.filter(i => i.status === 'waiting'), [items]);
-  
+
   const totalWaitingAmount = useMemo(() => {
     return waitingItems.reduce((acc, curr) => acc + (curr.price || 0), 0);
   }, [waitingItems]);
@@ -33,119 +42,151 @@ export default function Dashboard() {
   }, [waitingItems]);
 
   const riskLevel = useMemo(() => {
-    if (avgRegret > 60) return { label: "High", color: "#ef4444" };
-    if (avgRegret > 30) return { label: "Medium", color: "#f59e0b" };
-    return { label: "Low", color: "#10b981" };
+    if (avgRegret > 60) return { label: "High Risk", color: "#ef4444" };
+    if (avgRegret > 30) return { label: "Medium Risk", color: "#f59e0b" };
+    return { label: "Low Risk", color: "#10b981" };
   }, [avgRegret]);
 
   const randomWisdom = useMemo(() => WISDOM[Math.floor(Math.random() * WISDOM.length)], []);
 
   return (
-    <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 40 }}>
-      {/* Header Summary */}
-      <View className="bg-card pt-16 pb-12 px-6 rounded-b-[40px] shadow-lg">
-        <View className="flex-row justify-between items-center mb-6">
-          <View>
-            <Text className="text-cream-100/70 text-sm font-medium uppercase tracking-wider">Total Waiting</Text>
-            <Text className="text-cream-100 text-4xl font-display mt-1">€{totalWaitingAmount.toLocaleString()}</Text>
+    <ScrollView
+      className="flex-1 bg-[#EEEBDA]"
+      contentContainerStyle={{
+        paddingTop: Math.max(insets.top, 20),
+        paddingBottom: Math.max(insets.bottom, 20) + 60
+      }}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header */}
+      <View className="px-6 pt-10 pb-2">
+        <Text className="text-[11px] text-[#282B4A]/50 font-bold uppercase tracking-widest mb-2">Overview</Text>
+        <Text className="text-4xl font-fancy text-[#282B4A]">Hi, {firstName}.</Text>
+      </View>
+
+      {/* Hero Stat - Total Waiting */}
+      <View className="px-6 mt-6">
+        <View className="bg-[#282B4A] rounded-[32px] p-7 shadow-sm">
+          <View className="flex-row justify-between items-center mb-4">
+            <Text className="text-[11px] text-[#EEEBDA]/70 font-semibold uppercase tracking-widest">Total Waiting</Text>
+            <Sparkles size={16} color="#EEEBDA" opacity={0.5} />
           </View>
-          <View className="bg-primary w-14 h-14 rounded-2xl items-center justify-center">
-            <Wallet size={28} color="#282B4A" />
-          </View>
+          <Text className="text-[#EEEBDA] text-4xl font-bold tracking-tight">
+            {totalWaitingAmount.toLocaleString()} <Text className="text-2xl text-[#EEEBDA]/60 font-medium">DZD</Text>
+          </Text>
         </View>
-        
-        <View className="flex-row gap-4">
-          <View className="flex-1 bg-card/10 rounded-2xl p-4 backdrop-blur-md">
-            <Text className="text-cream-100/60 text-xs font-semibold uppercase">Items</Text>
-            <Text className="text-cream-100 text-xl font-bold mt-1">{waitingItems.length}</Text>
-          </View>
-          <View className="flex-1 bg-card/10 rounded-2xl p-4 backdrop-blur-md">
-            <Text className="text-cream-100/60 text-xs font-semibold uppercase">Impulse Risk</Text>
-            <View className="flex-row items-center mt-1">
-              <ShieldAlert size={16} color={riskLevel.color} className="mr-1" />
-              <Text className="text-cream-100 text-xl font-bold">{riskLevel.label}</Text>
-            </View>
+      </View>
+
+      {/* Secondary Stats */}
+      <View className="flex-row px-6 mt-4 gap-4">
+        {/* Items */}
+        <View className="flex-1 bg-white rounded-3xl p-5 border border-[#282B4A]/[0.03]">
+          <Text className="text-[10px] text-[#282B4A]/40 font-bold uppercase tracking-wider mb-2">Items</Text>
+          <Text className="text-[#282B4A] text-2xl font-bold">{waitingItems.length}</Text>
+        </View>
+
+        {/* Risk */}
+        <View className="flex-1 bg-white rounded-3xl p-5 border border-[#282B4A]/[0.03]">
+          <Text className="text-[10px] text-[#282B4A]/40 font-bold uppercase tracking-wider mb-2">Impulse Level</Text>
+          <View className="flex-row items-center gap-1.5 mt-1">
+            <ShieldAlert size={16} color={riskLevel.color} />
+            <Text className="text-[#282B4A] text-base font-bold">{riskLevel.label}</Text>
           </View>
         </View>
       </View>
 
-      {/* Daily Wisdom */}
-      <View className="px-6 -mt-6">
-        <Card className="bg-secondary border-cream-200 shadow-sm">
-          <CardContent className="p-5 flex-row items-center gap-4">
-            <View className="bg-primary rounded-full p-2">
-              <Heart size={20} color="#282B4A" />
-            </View>
-            <Text className="flex-1 text-primary font-medium italic leading-5">
-              "{randomWisdom}"
-            </Text>
-          </CardContent>
-        </Card>
+      {/* Elegant Daily Wisdom */}
+      <View className="px-10 mt-10 mb-2">
+        <Text className="text-[14px] text-[#282B4A]/50 italic font-serif leading-6 text-center">
+          "{randomWisdom}"
+        </Text>
       </View>
 
-      {/* Recent Items */}
-      <View className="mt-8">
-        <View className="flex-row justify-between items-center px-6 mb-4">
-          <Text className="text-foreground text-xl font-display">Recently Added</Text>
-          <TouchableOpacity onPress={() => router.push("/(tabs)/items")}>
-            <View className="flex-row items-center gap-1">
-              <Text className="text-primary text-sm font-semibold">View All</Text>
-              <ArrowRight size={14} color="#EEEBDA" />
+      {/* Recently Added Section */}
+      <View className="mt-10">
+        <View className="flex-row justify-between items-end px-6 mb-5">
+          <Text className="text-[#282B4A] text-xl font-bold">Waiting Room</Text>
+          <TouchableOpacity onPress={() => router.push("/(tabs)/items")} activeOpacity={0.6}>
+            <View className="flex-row items-center gap-1 pb-1">
+              <Text className="text-[#282B4A]/50 text-[12px] font-bold uppercase tracking-wider">View All</Text>
+              <ArrowRight size={14} color="rgba(40,43,74,0.5)" />
             </View>
           </TouchableOpacity>
         </View>
 
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingLeft: 24, paddingRight: 12 }}
         >
-          {waitingItems.slice(0, 5).map((item) => (
-            <TouchableOpacity 
-              key={item.id} 
-              onPress={() => router.push({ pathname: "/item/[id]", params: { id: item.id } })}
-              activeOpacity={0.8}
+          {/* Add New Button */}
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)/add")}
+            activeOpacity={0.8}
+            className="mr-4 w-32 h-32 rounded-[28px] items-center justify-center"
+            style={{ backgroundColor: '#282B4A' }}
+          >
+            <View
+              className="w-11 h-11 rounded-full items-center justify-center mb-3"
+              style={{ backgroundColor: 'rgba(238,235,218,0.15)' }}
             >
-              <Card className="mr-3 w-48 overflow-hidden bg-card border-none shadow-sm">
-                <View className="h-32 bg-muted items-center justify-center">
-                  <Timer size={32} color="#d4c9a3" />
-                </View>
-                <CardContent className="p-3">
-                  <Text numberOfLines={1} className="text-foreground font-bold text-sm">{item.title}</Text>
-                  <View className="flex-row justify-between items-center mt-2">
-                    <Text className="text-primary font-bold">{item.currency}{item.price}</Text>
-                    <View className="bg-secondary px-2 py-0.5 rounded-full">
-                      <Text className="text-primary-foreground text-[10px] font-bold uppercase">{item.delay_type}</Text>
-                    </View>
+              <PlusCircle size={20} color="#EEEBDA" />
+            </View>
+            <Text className="text-[13px] font-semibold" style={{ color: '#EEEBDA' }}>Add item</Text>
+            <Text className="text-[10px] mt-1" style={{ color: 'rgba(238,235,218,0.45)' }}>Resist the urge</Text>
+          </TouchableOpacity>
+
+          {/* Item Cards */}
+          {waitingItems.slice(0, 5).map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              onPress={() => router.push({ pathname: "/item/[id]", params: { id: item.id } })}
+              activeOpacity={0.9}
+            >
+              <View className="mr-4 w-40 h-48 bg-white rounded-[28px] p-5 justify-between border border-[#282B4A]/[0.03] shadow-sm">
+                <View>
+                  <View className="w-10 h-10 rounded-full bg-[#282B4A]/5 items-center justify-center mb-3">
+                    <Timer size={18} color="rgba(40,43,74,0.6)" />
                   </View>
-                </CardContent>
-              </Card>
+                  <Text numberOfLines={2} className="text-[#282B4A] font-bold text-sm leading-5">
+                    {item.title}
+                  </Text>
+                </View>
+
+                <View>
+                  <Text className="text-[#282B4A]/50 text-[10px] font-bold uppercase tracking-wider mb-1">
+                    {item.delay_type}
+                  </Text>
+                  <Text className="text-[#282B4A] font-bold text-[15px]">
+                    {item.price?.toLocaleString()} <Text className="text-[11px] text-[#282B4A]/60">{item.currency}</Text>
+                  </Text>
+                </View>
+              </View>
             </TouchableOpacity>
           ))}
-          
-          <TouchableOpacity 
-            onPress={() => router.push("/(tabs)/add")}
-            className="w-40 mr-3 border-2 border-dashed border-cream-300 rounded-3xl items-center justify-center"
-          >
-            <PlusCircle size={32} color="#EEEBDA" />
-            <Text className="text-primary font-bold mt-2">Add New</Text>
-          </TouchableOpacity>
         </ScrollView>
       </View>
 
-      {/* Stats / Motivation */}
-      <View className="px-6 mt-8">
-        <Card className="bg-card border-none p-6">
-          <Text className="text-muted-foreground text-sm font-semibold uppercase mb-2">Savings Potential</Text>
-          <Text className="text-white text-lg font-medium leading-6">
-            If you decided not to buy these today, you'd have <Text className="text-cream-300 font-bold">€{totalWaitingAmount}</Text> back in your pocket. 🥂
+      {/* Elegant Savings Card */}
+      <View className="px-6 mt-6">
+        <View className="bg-white rounded-[40px] p-8 border border-[#282B4A]/[0.04] shadow-sm items-center">
+          <Text className="text-[#282B4A] text-2xl font-fancy mb-3 text-center">
+            The Silver Lining
           </Text>
-          <TouchableOpacity className="bg-primary py-3 rounded-2xl mt-6 items-center">
-            <Text className="text-primary-foreground font-bold">Review My List</Text>
+          <Text className="text-[#282B4A]/60 text-[14px] font-medium leading-6 text-center px-4 mb-6">
+            If you walked away from these today, you'd keep{" "}
+            <Text className="text-[#282B4A] font-bold">{totalWaitingAmount.toLocaleString()} DZD</Text>.
+          </Text>
+
+          <TouchableOpacity
+            className="bg-[#282B4A] py-4 px-6 rounded-2xl items-center justify-center mt-2"
+            onPress={() => router.push("/(tabs)/items")}
+            activeOpacity={0.85}
+          >
+            <Text className="text-[#EEEBDA] font-bold text-[14px] tracking-wide">Review my list</Text>
           </TouchableOpacity>
-        </Card>
+        </View>
       </View>
     </ScrollView>
   );
 }
-

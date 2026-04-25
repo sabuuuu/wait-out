@@ -55,7 +55,7 @@ const buttonVariants = cva(
 
 const buttonTextVariants = cva(
   cn(
-    'text-foreground text-sm font-medium',
+    'text-foreground text-sm font-sans font-medium',
     Platform.select({ web: 'pointer-events-none transition-colors' })
   ),
   {
@@ -91,8 +91,15 @@ const buttonTextVariants = cva(
 type ButtonProps = React.ComponentProps<typeof Pressable> & VariantProps<typeof buttonVariants>;
 
 function Button({ className, variant, size, ...props }: ButtonProps) {
+  const textClass = buttonTextVariants({ variant, size });
+  const processedTextClass = textClass
+    .replace(/\bfont-bold\b/g, 'font-outfit-bold')
+    .replace(/\bfont-semibold\b/g, 'font-outfit-semibold')
+    .replace(/\bfont-medium\b/g, 'font-outfit-medium')
+    .replace(/\bfont-extrabold\b/g, 'font-outfit-extrabold');
+
   return (
-    <TextClassContext.Provider value={buttonTextVariants({ variant, size })}>
+    <TextClassContext.Provider value={processedTextClass}>
       <Pressable
         className={cn(props.disabled && 'opacity-50', buttonVariants({ variant, size }), className)}
         role="button"

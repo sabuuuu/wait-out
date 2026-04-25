@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { View, ScrollView, TouchableOpacity, FlatList } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text } from "@/components/ui/text";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAppStore } from "@/lib/store";
@@ -18,6 +19,7 @@ const STATUS_FILTERS: { label: string; value: ItemStatus | "all" }[] = [
 ];
 
 export default function Items() {
+  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const { items, isLoading } = useItems();
   const { collections } = useCollections();
@@ -34,30 +36,36 @@ export default function Items() {
   }, [items, statusFilter, activeCollectionId]);
 
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1 bg-[#EEEBDA]" style={{ paddingTop: Math.max(insets.top, 20) }}>
+      {/* Header */}
+      <View className="px-6 pt-10 pb-4">
+        <Text className="text-4xl font-fancy text-[#282B4A]">Waiting Room</Text>
+        <Text className="text-[13px] text-[#282B4A]/40 font-medium mt-2">Manage your intentional purchases.</Text>
+      </View>
+
       {/* Collection Selector */}
-      <View className="bg-card pt-4 pb-2 border-b border-border">
+      <View className="pt-4 pb-2">
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16 }}
+          contentContainerStyle={{ paddingHorizontal: 24 }}
         >
           <TouchableOpacity 
             onPress={() => setActiveCollection(null)}
-            className={`px-4 py-2 rounded-full mr-2 ${!activeCollectionId ? 'bg-primary' : 'bg-muted'}`}
+            className={`px-4 py-2 rounded-full mr-2 ${!activeCollectionId ? 'bg-[#282B4A]' : 'bg-[#282B4A]/5'}`}
           >
-            <Text className={`font-bold ${!activeCollectionId ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
-              All Collections
+            <Text className={`font-bold text-xs uppercase tracking-widest ${!activeCollectionId ? 'text-[#EEEBDA]' : 'text-[#282B4A]/50'}`}>
+              All
             </Text>
           </TouchableOpacity>
           {collections.map((col) => (
             <TouchableOpacity 
               key={col.id}
               onPress={() => setActiveCollection(col.id)}
-              className={`px-4 py-2 rounded-full mr-2 flex-row items-center ${activeCollectionId === col.id ? 'bg-primary' : 'bg-muted'}`}
+              className={`px-4 py-2 rounded-full mr-2 flex-row items-center ${activeCollectionId === col.id ? 'bg-[#282B4A]' : 'bg-[#282B4A]/5'}`}
             >
               <Text className="mr-2 text-base">{col.emoji}</Text>
-              <Text className={`font-bold ${activeCollectionId === col.id ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
+              <Text className={`font-bold text-xs uppercase tracking-widest ${activeCollectionId === col.id ? 'text-[#EEEBDA]' : 'text-[#282B4A]/50'}`}>
                 {col.name}
               </Text>
             </TouchableOpacity>
@@ -65,18 +73,28 @@ export default function Items() {
         </ScrollView>
 
         {/* Status Filter */}
-        <View className="flex-row px-4 mt-4 mb-2 gap-2">
-          {STATUS_FILTERS.map((filter) => (
-            <TouchableOpacity 
-              key={filter.value}
-              onPress={() => setStatusFilter(filter.value)}
-              className={`flex-1 py-2 rounded-xl items-center border ${statusFilter === filter.value ? 'bg-secondary border-cream-300' : 'bg-transparent border-transparent'}`}
-            >
-              <Text className={`text-xs font-bold ${statusFilter === filter.value ? 'text-primary' : 'text-muted-foreground'}`}>
-                {filter.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <View className="flex-row px-6 mt-4 mb-2 gap-2">
+          {STATUS_FILTERS.map((filter) => {
+            const isActive = statusFilter === filter.value;
+            return (
+              <TouchableOpacity 
+                key={filter.value}
+                onPress={() => setStatusFilter(filter.value)}
+                className="flex-1 py-2 rounded-xl items-center border shadow-sm"
+                style={{ 
+                  backgroundColor: isActive ? '#FFFFFF' : 'transparent',
+                  borderColor: isActive ? 'rgba(40,43,74,0.1)' : 'transparent'
+                }}
+              >
+                <Text 
+                  className="text-[10px] font-bold uppercase tracking-widest"
+                  style={{ color: isActive ? '#282B4A' : 'rgba(40,43,74,0.3)' }}
+                >
+                  {filter.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
 
@@ -86,18 +104,19 @@ export default function Items() {
         keyExtractor={(item) => item.id}
         refreshing={isLoading}
         onRefresh={() => queryClient.invalidateQueries({ queryKey: ["items"] })}
-        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        contentContainerStyle={{ padding: 24, paddingBottom: Math.max(insets.bottom, 20) + 100 }}
+        showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View className="items-center justify-center pt-20">
-            <View className="bg-muted w-20 h-20 rounded-full items-center justify-center mb-4">
-              <Ghost size={40} className="text-muted-foreground" />
+            <View className="bg-[#282B4A]/5 w-20 h-20 rounded-full items-center justify-center mb-4">
+              <Ghost size={32} color="rgba(40,43,74,0.3)" />
             </View>
-            <Text className="text-muted-foreground font-medium">Nothing here yet...</Text>
+            <Text className="text-[#282B4A]/40 font-medium">Nothing here yet...</Text>
             <TouchableOpacity 
               onPress={() => router.push("/(tabs)/add")}
               className="mt-4"
             >
-              <Text className="text-primary font-bold">Add your first item</Text>
+              <Text className="text-[#282B4A] font-bold">Add your first item</Text>
             </TouchableOpacity>
           </View>
         }
@@ -107,41 +126,31 @@ export default function Items() {
             activeOpacity={0.7}
             className="mb-4"
           >
-            <Card className="border-none shadow-sm overflow-hidden">
-              <View className="flex-row">
-                <View className="w-24 h-24 bg-muted items-center justify-center">
-                  {item.status === 'waiting' && <Timer size={30} className="text-primary" />}
-                  {item.status === 'bought' && <ShoppingBag size={30} className="text-blue-300" />}
-                  {item.status === 'forgot' && <Ghost size={30} className="text-muted-foreground" />}
+            <View className="bg-white rounded-[32px] p-4 flex-row items-center border border-[#282B4A]/[0.03] shadow-sm">
+              <View className="w-20 h-20 bg-[#282B4A]/[0.04] rounded-2xl items-center justify-center mr-4">
+                {item.status === 'waiting' && <Timer size={24} color="rgba(40,43,74,0.6)" />}
+                {item.status === 'bought' && <ShoppingBag size={24} color="#10b981" />}
+                {item.status === 'forgot' && <Ghost size={24} color="rgba(40,43,74,0.3)" />}
+              </View>
+              <View className="flex-1 justify-center">
+                <View>
+                  <Text numberOfLines={1} className="text-[#282B4A] font-bold text-base">{item.title}</Text>
+                  <Text className="text-[#282B4A]/40 text-[10px] uppercase font-bold tracking-wider mt-1">
+                    {item.delay_type} • {new Date(item.added_at).toLocaleDateString()}
+                  </Text>
                 </View>
-                <View className="flex-1 p-3 justify-between">
-                  <View>
-                    <Text numberOfLines={1} className="text-foreground font-bold text-base">{item.title}</Text>
-                    <Text className="text-muted-foreground text-xs mt-0.5">
-                      Added {new Date(item.added_at).toLocaleDateString()}
-                    </Text>
-                  </View>
-                  <View className="flex-row justify-between items-center">
-                    <Text className="text-primary font-bold text-lg">{item.currency}{item.price}</Text>
-                    <View className="bg-muted px-2 py-1 rounded-lg">
-                      <Text className="text-[10px] font-bold text-muted-foreground uppercase">{item.delay_type}</Text>
-                    </View>
-                  </View>
-                </View>
-                <View className="px-2 justify-center">
-                  <ChevronRight size={20} className="text-muted-foreground" />
+                <View className="flex-row justify-between items-center mt-2">
+                  <Text className="text-[#282B4A] font-bold text-lg">
+                    {item.price?.toLocaleString()} <Text className="text-xs text-[#282B4A]/50">{item.currency}</Text>
+                  </Text>
+                  <ChevronRight size={18} color="rgba(40,43,74,0.3)" />
                 </View>
               </View>
-              {/* Progress bar for waiting items */}
-              {item.status === 'waiting' && (
-                <View className="h-1 bg-muted w-full">
-                  <View className="h-1 bg-primary w-1/3" />
-                </View>
-              )}
-            </Card>
+            </View>
           </TouchableOpacity>
         )}
       />
     </View>
   );
 }
+

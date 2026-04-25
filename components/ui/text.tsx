@@ -6,7 +6,7 @@ import { Platform, Text as RNText, type Role } from 'react-native';
 
 const textVariants = cva(
   cn(
-    'text-foreground text-base',
+    'text-foreground text-base font-outfit',
     Platform.select({
       web: 'select-text',
     })
@@ -75,9 +75,18 @@ function Text({
   }) {
   const textClass = React.useContext(TextClassContext);
   const Component = asChild ? Slot.Text : RNText;
+
+  // Map standard weight classes to Outfit font families for robust NativeWind support
+  const finalClassName = cn(textVariants({ variant }), textClass, className);
+  const processedClassName = finalClassName
+    .replace(/\bfont-bold\b/g, 'font-outfit-bold')
+    .replace(/\bfont-semibold\b/g, 'font-outfit-semibold')
+    .replace(/\bfont-medium\b/g, 'font-outfit-medium')
+    .replace(/\bfont-extrabold\b/g, 'font-outfit-extrabold');
+
   return (
     <Component
-      className={cn(textVariants({ variant }), textClass, className)}
+      className={processedClassName}
       role={variant ? ROLE[variant] : undefined}
       aria-level={variant ? ARIA_LEVEL[variant] : undefined}
       {...props}
