@@ -1984,64 +1984,6 @@ npx expo prebuild
 | Pull to refresh | Native RefreshControl, tint `#F2C4CE`, re-fetches from Supabase |
 | Offline banner | Detect `NetInfo.isConnected`, show soft warning if offline |
 
----
-
-## Phase 10 — Build & Deploy
-
-```bash
-npm install -g eas-cli
-eas login
-eas build:configure
-
-# Dev build (required for notifications — Expo Go won't work)
-eas build --profile development --platform ios
-
-# Production
-eas build --profile production --platform all
-eas submit
-```
-
-### app.json essentials
-
-```json
-{
-  "expo": {
-    "name":    "Pausy",
-    "slug":    "pausy",
-    "version": "1.0.0",
-    "scheme":  "waitout",
-    "icon":    "./assets/icon.png",
-    "splash": {
-      "image":           "./assets/splash.png",
-      "backgroundColor": "#fdf8f5"
-    },
-    "plugins": [
-      "expo-router",
-      ["expo-notifications", {
-        "icon":  "./assets/notification-icon.png",
-        "color": "#F2C4CE"
-      }],
-      ["expo-image-picker", {
-        "photosPermission": "Pausy uses your photos to save screenshots of things you want."
-      }]
-    ],
-    "ios": {
-      "supportsTablet":   false,
-      "bundleIdentifier": "com.yourname.waitout"
-    },
-    "android": {
-      "package": "com.yourname.waitout",
-      "adaptiveIcon": {
-        "foregroundImage":  "./assets/adaptive-icon.png",
-        "backgroundColor":  "#F2C4CE"
-      }
-    }
-  }
-}
-```
-
----
-
 ## Quick Reference — Key Decisions
 
 | Decision | Choice | Reason |
@@ -2057,6 +1999,533 @@ eas submit
 | **Notifications** | **Per-collection frequency: on-schedule / daily / weekly / never** | User controls the cadence, not us |
 | Notifications delivery | Push first, email as fallback | Impulse control needs real-time nudges |
 | ML model | Weighted score → logistic regression | Ship fast, improve with real data |
+
+---
+
+---
+
+# 🧠 Pausy V2 — "Do I Actually Want This?"
+
+> V1 taught us *patience*. V2 teaches us *self-knowledge*. Same app, now with a brain.
+
+V2 replaces the hand-tuned `regret-score.ts` heuristic with a real ML pipeline that learns from **your own purchase history** and predicts: *"There's a 78% chance you'll regret this."*
+
+---
+
+## V2 Overview
+
+| | V1 | V2 |
+|---|---|---|
+| Regret score | Weighted formula (hardcoded) | ML model trained per-user |
+| Inputs | Time of day, price, category | + past ignored items, price-vs-avg, session context |
+| Output | Score 0–100 | Regret probability 0–1 with factor explanation |
+| Backend | Supabase only | + Python ML microservice (FastAPI) |
+| Training data | None | Items you marked "forgot" or "bought anyway" |
+
+---
+
+## Phase V2.0 — New Data We Need to Collect
+
+Before training anything, we need richer signals. These extend the existing `WishlistItem` type and Supabase schema.
+
+### V2.0.1 — Extended `WishlistItem` type
+
+```ts
+// lib/types.ts — additions for V2
+export interface WishlistItem {
+  // ... all V1 fields ...
+
+  // V2: ML feature signals
+  added_day_of_week:   number;       // 0 = Sunday … 6 = Saturday
+  session_items_count: number;       // how many items added in same 30-min session
+  price_vs_cat_avg:    number | null; // ratio: item price / user's avg for this category
+  category_slug:       string | null; // "clothes" | "tech" | "home" | "beauty" | "other"
+  source_platform:     "tiktok" | "instagram" | "web" | "unknown";
+
+  // V2: outcome label (set when user resolves the item)
+  outcome:             "regretted" | "happy" | "neutral" | null;
+  outcome_set_at:      string | null;
+}
+```
+
+### V2.0.2 — Schema migration
+
+```sql
+-- Run in Supabase SQL editor
+alter table items
+  add column added_day_of_week   smallint,
+  add column session_items_count smallint default 1,
+  add column price_vs_cat_avg    float,
+  add column category_slug       text,
+  add column source_platform     text default 'unknown',
+  add column outcome             text check (outcome in ('regretted','happy','neutral')),
+  add column outcome_set_at      timestamptz;
+
+-- Index for ML training queries
+create index items_outcome_idx on items (user_id, outcome) where outcome is not null;
+```
+
+### V2.0.3 — Capture `outcome` in the app
+
+When an item reaches `status = "bought"` or `status = "forgot"`, show a one-tap outcome card:
+
+```tsx
+// components/OutcomePrompt.tsx
+// Shown as a bottom sheet when item expires or is marked bought.
+// "How do you feel about this purchase?"
+// [😬 Regret it]   [😊 Happy with it]   [🤷 Neutral]
+
+export function OutcomePrompt({ item, onDone }: { item: WishlistItem; onDone: () => void }) {
+  async function record(outcome: "regretted" | "happy" | "neutral") {
+    await supabase
+      .from("items")
+      .update({ outcome, outcome_set_at: new Date().toISOString() })
+      .eq("id", item.id);
+    onDone();
+  }
+  // ... render three emoji buttons
+}
+```
+
+---
+
+## Phase V2.1 — Feature Engineering
+
+All features are computed **at item-add time** and stored in the DB. No inference-time lookups needed.
+
+```ts
+// lib/ml-features.ts
+
+export interface MLFeatures {
+  hour_sin:            number;   // sin(2π * hour/24) — cyclic encoding
+  hour_cos:            number;   // cos(2π * hour/24)
+  day_of_week:         number;   // 0–6
+  is_weekend:          number;   // 0 | 1
+  price_log:           number;   // log1p(price) — handles $5 vs $500 items
+  price_vs_cat_avg:    number;   // 1.0 = at average; 2.0 = twice average
+  session_items_count: number;   // binge-adding signal
+  source_tiktok:       number;   // one-hot
+  source_instagram:    number;
+  source_web:          number;
+  cat_clothes:         number;   // one-hot category
+  cat_tech:            number;
+  cat_beauty:          number;
+  cat_home:            number;
+  cat_other:           number;
+  ignored_ratio_cat:   number;   // % of past items in this category the user ignored
+}
+
+export function extractFeatures(item: WishlistItem, history: WishlistItem[]): MLFeatures {
+  const hour  = item.added_hour;
+  const price = item.price ?? 0;
+
+  // Cyclic time encoding — midnight and 11pm are "close"
+  const hour_sin = Math.sin((2 * Math.PI * hour) / 24);
+  const hour_cos = Math.cos((2 * Math.PI * hour) / 24);
+
+  // Category average price from history
+  const catItems   = history.filter((h) => h.category_slug === item.category_slug && h.price);
+  const catAvgPrice = catItems.length
+    ? catItems.reduce((s, h) => s + (h.price ?? 0), 0) / catItems.length
+    : price;
+  const price_vs_cat_avg = catAvgPrice > 0 ? price / catAvgPrice : 1;
+
+  // Ignored ratio: items in this category that ended as "forgot" or no outcome
+  const catResolved = catItems.filter((h) => h.outcome);
+  const ignored_ratio_cat = catResolved.length
+    ? catResolved.filter((h) => h.outcome !== "happy").length / catResolved.length
+    : 0.5; // prior if no data
+
+  return {
+    hour_sin, hour_cos,
+    day_of_week:      item.added_day_of_week,
+    is_weekend:       [0, 6].includes(item.added_day_of_week) ? 1 : 0,
+    price_log:        Math.log1p(price),
+    price_vs_cat_avg,
+    session_items_count: item.session_items_count,
+    source_tiktok:    item.source_platform === "tiktok"    ? 1 : 0,
+    source_instagram: item.source_platform === "instagram" ? 1 : 0,
+    source_web:       item.source_platform === "web"       ? 1 : 0,
+    cat_clothes:      item.category_slug === "clothes"     ? 1 : 0,
+    cat_tech:         item.category_slug === "tech"        ? 1 : 0,
+    cat_beauty:       item.category_slug === "beauty"      ? 1 : 0,
+    cat_home:         item.category_slug === "home"        ? 1 : 0,
+    cat_other:        !item.category_slug || item.category_slug === "other" ? 1 : 0,
+    ignored_ratio_cat,
+  };
+}
+```
+
+---
+
+## Phase V2.2 — ML Model (Python Microservice)
+
+The model runs as a lightweight **FastAPI** service deployed on Railway or Fly.io. It exposes two endpoints: `POST /predict` and `POST /train`.
+
+### V2.2.1 — Model choice
+
+We use **Logistic Regression** (scikit-learn) as the baseline — it's fast, explainable, and good enough for ~50–500 training samples per user. We can swap in XGBoost or a small neural net later.
+
+```
+model/
+├── main.py          # FastAPI app
+├── model.py         # Training + inference logic
+├── requirements.txt
+└── Dockerfile
+```
+
+### V2.2.2 — `model/model.py`
+
+```python
+# model/model.py
+import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+import joblib, os, json
+
+FEATURE_KEYS = [
+    "hour_sin", "hour_cos", "day_of_week", "is_weekend",
+    "price_log", "price_vs_cat_avg", "session_items_count",
+    "source_tiktok", "source_instagram", "source_web",
+    "cat_clothes", "cat_tech", "cat_beauty", "cat_home", "cat_other",
+    "ignored_ratio_cat",
+]
+
+def features_to_array(f: dict) -> np.ndarray:
+    return np.array([[f[k] for k in FEATURE_KEYS]])
+
+def train(training_rows: list[dict]) -> dict:
+    """
+    training_rows: list of { ...features..., label: 1 (regretted) | 0 (happy/neutral) }
+    Returns: { "accuracy": float, "n_samples": int }
+    """
+    if len(training_rows) < 10:
+        return {"error": "need at least 10 labelled items to train"}
+
+    X = np.array([[r[k] for k in FEATURE_KEYS] for r in training_rows])
+    y = np.array([r["label"] for r in training_rows])
+
+    pipeline = Pipeline([
+        ("scaler", StandardScaler()),
+        ("clf",    LogisticRegression(C=1.0, max_iter=500, class_weight="balanced")),
+    ])
+    pipeline.fit(X, y)
+
+    return pipeline  # caller persists to disk / Supabase Storage
+
+def predict(pipeline, features: dict) -> dict:
+    X = features_to_array(features)
+    prob = pipeline.predict_proba(X)[0][1]   # P(regret)
+
+    # SHAP-lite: coefficient × scaled feature → factor importance
+    scaler = pipeline.named_steps["scaler"]
+    clf    = pipeline.named_steps["clf"]
+    X_scaled = scaler.transform(X)[0]
+    contribs = dict(zip(FEATURE_KEYS, (X_scaled * clf.coef_[0]).tolist()))
+
+    top_factors = sorted(contribs.items(), key=lambda x: abs(x[1]), reverse=True)[:3]
+
+    return {
+        "regret_probability": round(float(prob), 3),
+        "top_factors": [{"feature": k, "contribution": round(v, 3)} for k, v in top_factors],
+    }
+```
+
+### V2.2.3 — `model/main.py` (FastAPI)
+
+```python
+# model/main.py
+from fastapi import FastAPI, HTTPException, Header
+from pydantic import BaseModel
+import joblib, os, io, json
+from supabase import create_client
+from model import train, predict, FEATURE_KEYS
+
+app = FastAPI()
+supabase = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"])
+API_SECRET = os.environ["ML_API_SECRET"]
+
+def load_model(user_id: str):
+    try:
+        res = supabase.storage.from_("ml-models").download(f"{user_id}/model.pkl")
+        return joblib.load(io.BytesIO(res))
+    except Exception:
+        return None  # no model yet → fall back to V1 heuristic
+
+def save_model(user_id: str, pipeline):
+    buf = io.BytesIO()
+    joblib.dump(pipeline, buf)
+    buf.seek(0)
+    supabase.storage.from_("ml-models").upload(
+        f"{user_id}/model.pkl", buf.read(), {"upsert": "true"}
+    )
+
+class PredictRequest(BaseModel):
+    user_id:  str
+    features: dict
+
+class TrainRequest(BaseModel):
+    user_id:       str
+    training_rows: list[dict]
+
+@app.post("/predict")
+def predict_endpoint(req: PredictRequest, x_api_key: str = Header(...)):
+    if x_api_key != API_SECRET:
+        raise HTTPException(403)
+    pipeline = load_model(req.user_id)
+    if not pipeline:
+        return {"regret_probability": None, "fallback": "v1_heuristic"}
+    return predict(pipeline, req.features)
+
+@app.post("/train")
+def train_endpoint(req: TrainRequest, x_api_key: str = Header(...)):
+    if x_api_key != API_SECRET:
+        raise HTTPException(403)
+    result = train(req.training_rows)
+    if isinstance(result, dict) and "error" in result:
+        return result
+    save_model(req.user_id, result)
+    return {"status": "trained", "n_samples": len(req.training_rows)}
+```
+
+### V2.2.4 — Supabase Storage bucket for models
+
+```sql
+-- Dashboard → Storage → New bucket
+insert into storage.buckets (id, name, public) values ('ml-models', 'ml-models', false);
+
+-- Only the service role can read/write (ML microservice uses service key)
+-- No user-facing RLS needed
+```
+
+### V2.2.5 — Deploy
+
+```bash
+# Dockerfile
+FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# requirements.txt
+fastapi==0.111.*
+uvicorn==0.29.*
+scikit-learn==1.5.*
+joblib==1.4.*
+numpy==1.26.*
+supabase==2.*
+pydantic==2.*
+```
+
+```bash
+# Deploy to Railway (recommended)
+railway init
+railway up
+
+# Set env vars in Railway dashboard:
+# SUPABASE_URL, SUPABASE_SERVICE_KEY, ML_API_SECRET
+```
+
+---
+
+## Phase V2.3 — App Integration
+
+### V2.3.1 — Call ML service from the app
+
+```ts
+// lib/ml-predict.ts
+import { extractFeatures } from "./ml-features";
+import { WishlistItem } from "./types";
+
+const ML_URL    = process.env.EXPO_PUBLIC_ML_URL!;       // Railway URL
+const ML_SECRET = process.env.EXPO_PUBLIC_ML_SECRET!;
+
+export async function getMLRegretScore(
+  item: WishlistItem,
+  history: WishlistItem[]
+): Promise<{ probability: number | null; topFactors: { feature: string; contribution: number }[] }> {
+  const features = extractFeatures(item, history);
+
+  try {
+    const res = await fetch(`${ML_URL}/predict`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": ML_SECRET },
+      body:    JSON.stringify({ user_id: item.user_id, features }),
+    });
+    const data = await res.json();
+
+    if (data.fallback === "v1_heuristic") {
+      return { probability: null, topFactors: [] }; // app falls back to V1 score
+    }
+    return { probability: data.regret_probability, topFactors: data.top_factors };
+  } catch {
+    return { probability: null, topFactors: [] }; // graceful degradation
+  }
+}
+```
+
+### V2.3.2 — Trigger model re-training
+
+Training runs automatically when a user records 10+ new outcomes since their last model was trained. A Supabase Edge Function handles this.
+
+```ts
+// supabase/functions/trigger-training/index.ts
+import { serve } from "https://deno.land/std/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
+
+serve(async (req) => {
+  const { user_id } = await req.json();
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_KEY")!);
+
+  // Fetch all labelled items for this user
+  const { data: rows } = await supabase
+    .from("items")
+    .select("*")
+    .eq("user_id", user_id)
+    .not("outcome", "is", null);
+
+  if (!rows || rows.length < 10) {
+    return new Response(JSON.stringify({ status: "not_enough_data" }), { status: 200 });
+  }
+
+  // Build training rows: features + label
+  const trainingRows = rows.map((item) => ({
+    // features are stored on the item at add-time
+    hour_sin:            item.hour_sin,
+    hour_cos:            item.hour_cos,
+    day_of_week:         item.added_day_of_week,
+    is_weekend:          [0, 6].includes(item.added_day_of_week) ? 1 : 0,
+    price_log:           Math.log1p(item.price ?? 0),
+    price_vs_cat_avg:    item.price_vs_cat_avg ?? 1,
+    session_items_count: item.session_items_count ?? 1,
+    source_tiktok:       item.source_platform === "tiktok"    ? 1 : 0,
+    source_instagram:    item.source_platform === "instagram" ? 1 : 0,
+    source_web:          item.source_platform === "web"       ? 1 : 0,
+    cat_clothes:         item.category_slug === "clothes"     ? 1 : 0,
+    cat_tech:            item.category_slug === "tech"        ? 1 : 0,
+    cat_beauty:          item.category_slug === "beauty"      ? 1 : 0,
+    cat_home:            item.category_slug === "home"        ? 1 : 0,
+    cat_other:           !item.category_slug || item.category_slug === "other" ? 1 : 0,
+    ignored_ratio_cat:   0.5, // pre-computed at add-time; use stored value in prod
+    label:               item.outcome === "regretted" ? 1 : 0,
+  }));
+
+  await fetch(`${Deno.env.get("ML_URL")}/train`, {
+    method:  "POST",
+    headers: { "Content-Type": "application/json", "x-api-key": Deno.env.get("ML_SECRET")! },
+    body:    JSON.stringify({ user_id, training_rows: trainingRows }),
+  });
+
+  return new Response(JSON.stringify({ status: "training_triggered", n: trainingRows.length }));
+});
+```
+
+---
+
+## Phase V2.4 — New UI: ML Score Card
+
+Replace the V1 `RegretScore.tsx` component with an ML-aware version that shows **why** the model thinks you'll regret it.
+
+```tsx
+// components/MLScoreCard.tsx
+import { View } from "react-native";
+import { Text } from "~/components/ui/text";
+import { Card } from "~/components/ui/card";
+import { RiskBadge } from "~/components/ui/badge";
+
+const FACTOR_LABELS: Record<string, string> = {
+  hour_sin:            "🌙 Late-night vibes",
+  hour_cos:            "🌙 Late-night vibes",
+  price_vs_cat_avg:    "💸 Pricier than your usual",
+  session_items_count: "🛒 On a shopping spree",
+  source_tiktok:       "📱 TikTok made you do it",
+  source_instagram:    "📱 Instagram made you do it",
+  ignored_ratio_cat:   "🪦 You usually forget these",
+  cat_tech:            "🖥️ Tech = danger zone for you",
+  cat_clothes:         "👗 You own enough clothes",
+  is_weekend:          "📅 Weekend treat mode",
+};
+
+export function MLScoreCard({
+  probability,
+  topFactors,
+  fallbackScore,
+}: {
+  probability:  number | null;
+  topFactors:   { feature: string; contribution: number }[];
+  fallbackScore: number;
+}) {
+  const score = probability !== null ? Math.round(probability * 100) : fallbackScore;
+  const risk  = score >= 65 ? "high" : score >= 35 ? "mid" : "low";
+  const isML  = probability !== null;
+
+  return (
+    <Card>
+      <View className="flex-row items-center justify-between mb-3">
+        <Text className="font-semibold text-navy-500">Regret forecast</Text>
+        <View className="flex-row items-center gap-2">
+          {isML && <Text className="text-xs text-navy-300">✨ personalised</Text>}
+          <RiskBadge risk={risk} score={score} />
+        </View>
+      </View>
+
+      {isML && topFactors.length > 0 && (
+        <View className="gap-1">
+          <Text className="text-xs text-navy-300 font-semibold uppercase tracking-wide mb-1">
+            Why we think so
+          </Text>
+          {topFactors.map((f) => (
+            <Text key={f.feature} className="text-sm text-navy-400">
+              {FACTOR_LABELS[f.feature] ?? f.feature}
+            </Text>
+          ))}
+        </View>
+      )}
+
+      {!isML && (
+        <Text className="text-xs text-navy-300">
+          Add 10+ items and rate them to unlock your personalised model ✨
+        </Text>
+      )}
+    </Card>
+  );
+}
+```
+
+---
+
+## Phase V2.5 — Cold Start Strategy
+
+New users have no training data. Handle gracefully:
+
+| User state | Score source | UI label |
+|---|---|---|
+| < 10 outcomes | V1 heuristic formula | *(no label)* |
+| 10–30 outcomes | Logistic Regression (sparse) | "✨ learning your patterns" |
+| 30+ outcomes | Full personal model | "✨ personalised" |
+
+The V1 `regret-score.ts` heuristic stays in the codebase permanently as the fallback. The ML layer is **additive** — it never breaks the existing flow.
+
+---
+
+## V2 Quick Reference — New Decisions
+
+| Decision | Choice | Reason |
+|---|---|---|
+| ML model | Logistic Regression (scikit-learn) | Explainable, works with small per-user datasets |
+| Feature encoding | Cyclic (time), log (price), one-hot (category/source) | Handles edge cases cleanly |
+| Model storage | Supabase Storage (per-user `.pkl`) | No extra infra; isolated per user |
+| Serving | FastAPI on Railway | Lightweight, $0 at low traffic |
+| Training trigger | Supabase Edge Function on outcome save | Automatic, serverless |
+| Cold start | V1 heuristic as fallback | Zero breaking changes |
+| Outcome capture | One-tap emoji prompt post-expiry | Low friction = high completion rate |
+
+---
+
+> 🧠 *V1 made you wait. V2 knows why you shouldn't have clicked in the first place.*
 
 ---
 
