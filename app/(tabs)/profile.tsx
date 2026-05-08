@@ -9,26 +9,22 @@ import { supabase } from "@/lib/supabase";
 import { User, Bell, Shield, LogOut, ChevronRight, Moon, CreditCard } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useAppStore } from "@/lib/store";
+import { useProfile } from "@/hooks/useProfile";
 
 export default function Profile() {
   const insets = useSafeAreaInsets();
   const { showAlert } = useAppStore();
-  const [email, setEmail] = useState<string | null>(null);
-  const [displayName, setDisplayName] = useState<string | null>(null);
+  const { profile, prefs, updateProfile, updatePrefs } = useProfile();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    getUser();
-  }, []);
+  const [email, setEmail] = useState<string | null>(null);
 
-  async function getUser() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      setEmail(user.email ?? null);
-      setDisplayName(user.user_metadata?.full_name ?? "Wait Out User");
-    }
-  }
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setEmail(user.email ?? null);
+    });
+  }, []);
 
   async function handleSignOut() {
     setLoading(true);
@@ -38,11 +34,11 @@ export default function Profile() {
   }
 
   return (
-    <ScrollView 
+    <ScrollView
       className="flex-1 bg-[#EEEBDA]"
-      contentContainerStyle={{ 
+      contentContainerStyle={{
         paddingTop: Math.max(insets.top, 20),
-        paddingBottom: Math.max(insets.bottom, 20) + 100 
+        paddingBottom: Math.max(insets.bottom, 20) + 100
       }}
       showsVerticalScrollIndicator={false}
     >
@@ -56,7 +52,7 @@ export default function Profile() {
         <View className="w-24 h-24 bg-white rounded-full items-center justify-center mb-4 shadow-sm border border-[#282B4A]/5">
           <User size={48} color="#282B4A" opacity={0.6} />
         </View>
-        <Text className="text-2xl font-bold text-[#282B4A]">{displayName}</Text>
+        <Text className="text-2xl font-bold text-[#282B4A]">{profile?.display_name}</Text>
         <Text className="text-[#282B4A]/50 font-medium">{email}</Text>
 
         <TouchableOpacity className="mt-6 px-6 py-2.5 rounded-full bg-[#282B4A] shadow-sm">
@@ -77,7 +73,7 @@ export default function Profile() {
                 <Text className="text-[#282B4A] font-medium">Currency Settings</Text>
               </View>
               <View className="flex-row items-center gap-2">
-                <Text className="text-[#282B4A]/40 text-sm font-bold">DZD</Text>
+                <Text className="text-[#282B4A]/40 text-sm font-bold">{profile?.currency}</Text>
                 <ChevronRight size={16} color="rgba(40,43,74,0.3)" />
               </View>
             </TouchableOpacity>
@@ -100,14 +96,19 @@ export default function Profile() {
                 <Bell size={20} color="rgba(40,43,74,0.6)" />
                 <Text className="text-[#282B4A] font-medium">Global Reminders</Text>
               </View>
-              <Switch value={true} onValueChange={() => { }} thumbColor="#EEEBDA" trackColor={{ true: '#282B4A', false: 'rgba(40,43,74,0.1)' }} />
+              <Switch
+                value={prefs?.global_enabled ?? true}
+                onValueChange={(val) => updatePrefs({ global_enabled: val })}
+                thumbColor="#EEEBDA"
+                trackColor={{ true: '#282B4A', false: 'rgba(40,43,74,0.1)' }}
+              />
             </View>
             <View className="flex-row items-center justify-between p-5">
               <View className="flex-row items-center gap-3">
                 <Moon size={20} color="rgba(40,43,74,0.6)" />
                 <Text className="text-[#282B4A] font-medium">Quiet Hours</Text>
               </View>
-              <Text className="text-[#282B4A]/40 text-sm font-bold">22:00 - 08:00</Text>
+              <Text className="text-[#282B4A]/40 text-sm font-bold">{prefs?.quiet_hours_start} - {prefs?.quiet_hours_end}</Text>
             </View>
           </View>
         </View>

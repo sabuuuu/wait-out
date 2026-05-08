@@ -1573,7 +1573,7 @@ export function RegretScoreCard({
 
 ---
 
-## Phase 5 — Collections Management
+## Phase 5 — Collections Management [x]
 
 ### 5.1 Collections manage screen [x]
 
@@ -1684,7 +1684,7 @@ export default function ManageCollectionsScreen() {
 }
 ```
 
-### 5.2 Collection notification settings screen
+### 5.2 Collection notification settings screen [x]
 
 ```tsx
 // app/collection/[id].tsx

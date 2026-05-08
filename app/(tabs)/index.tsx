@@ -5,6 +5,7 @@ import { Text } from "@/components/ui/text";
 import { ArrowRight, Timer, PlusCircle, ShieldAlert, Sparkles } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useItems } from "@/hooks/useItems";
+import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/lib/supabase";
 
 const WISDOM = [
@@ -18,17 +19,13 @@ const WISDOM = [
 export default function Dashboard() {
   const insets = useSafeAreaInsets();
   const { items } = useItems();
+  const { profile } = useProfile();
   const router = useRouter();
-  const [firstName, setFirstName] = useState("");
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        const name = user.user_metadata?.full_name ?? "";
-        setFirstName(name.split(" ")[0] || "there");
-      }
-    });
-  }, []);
+  const firstName = useMemo(() => {
+    const name = profile?.display_name ?? "";
+    return name.split(" ")[0] || "there";
+  }, [profile]);
 
   const waitingItems = useMemo(() => items.filter(i => i.status === 'waiting'), [items]);
 

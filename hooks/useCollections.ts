@@ -32,6 +32,25 @@ export function useCollections() {
       if (error) throw error;
       return data as Collection;
     },
+    onMutate: async (newCol) => {
+      await queryClient.cancelQueries({ queryKey: ["collections"] });
+      const previousCollections = queryClient.getQueryData<Collection[]>(["collections"]);
+
+      const optimisticCol = {
+        ...newCol,
+        id: Math.random().toString(36).substring(7),
+        created_at: new Date().toISOString(),
+      } as Collection;
+
+      queryClient.setQueryData<Collection[]>(["collections"], (old) => [...(old || []), optimisticCol]);
+
+      return { previousCollections };
+    },
+    onError: (err, newCol, context) => {
+      if (context?.previousCollections) {
+        queryClient.setQueryData(["collections"], context.previousCollections);
+      }
+    },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["collections"] }),
   });
 
@@ -46,6 +65,21 @@ export function useCollections() {
       if (error) throw error;
       return data as Collection;
     },
+    onMutate: async (updatedCol) => {
+      await queryClient.cancelQueries({ queryKey: ["collections"] });
+      const previousCollections = queryClient.getQueryData<Collection[]>(["collections"]);
+
+      queryClient.setQueryData<Collection[]>(["collections"], (old) =>
+        old?.map(col => col.id === updatedCol.id ? { ...col, ...updatedCol } : col)
+      );
+
+      return { previousCollections };
+    },
+    onError: (err, updatedCol, context) => {
+      if (context?.previousCollections) {
+        queryClient.setQueryData(["collections"], context.previousCollections);
+      }
+    },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["collections"] }),
   });
 
@@ -56,10 +90,26 @@ export function useCollections() {
         .delete()
         .eq("id", id);
       if (error) throw error;
+      return id;
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["collections"] });
+      const previousCollections = queryClient.getQueryData<Collection[]>(["collections"]);
+
+      queryClient.setQueryData<Collection[]>(["collections"], (old) =>
+        old?.filter(col => col.id !== id)
+      );
+
+      return { previousCollections };
+    },
+    onError: (err, id, context) => {
+      if (context?.previousCollections) {
+        queryClient.setQueryData(["collections"], context.previousCollections);
+      }
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["collections"] });
-      queryClient.invalidateQueries({ queryKey: ["items"] }); // Invalidate items since their collection might be gone
+      queryClient.invalidateQueries({ queryKey: ["items"] });
     },
   });
 

@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { View, Modal, TouchableOpacity, ScrollView, TextInput, Alert } from "react-native";
+import { useRouter } from "expo-router";
 import { Text } from "./ui/text";
 import { Button } from "./ui/button";
 import { useCollections } from "@/hooks/useCollections";
-import { X, Plus, Trash2, Edit2, Check, Smile } from "lucide-react-native";
+import { X, Plus, Trash2, Edit2, Check, Smile, Settings } from "lucide-react-native";
 import { Collection } from "@/lib/types";
 import { supabase } from "@/lib/supabase";
 
@@ -18,6 +19,7 @@ export function ManageCollectionsModal({ visible, onClose }: Props) {
   const [name, setName] = useState("");
   const [emoji, setEmoji] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const router = useRouter();
 
   const handleAdd = async () => {
     if (!name || !emoji) return;
@@ -30,6 +32,8 @@ export function ManageCollectionsModal({ visible, onClose }: Props) {
         name,
         emoji,
         sort_order: collections.length,
+        notif_enabled: true,
+        notif_frequency: "on_schedule",
       });
       setName("");
       setEmoji("");
@@ -119,6 +123,15 @@ export function ManageCollectionsModal({ visible, onClose }: Props) {
                       <Text className="font-bold text-[#282B4A]">{col.name}</Text>
                     </View>
                     <View className="flex-row gap-2">
+                      <TouchableOpacity 
+                        onPress={() => { 
+                          onClose(); 
+                          router.push({ pathname: "/collection/[id]", params: { id: col.id } }); 
+                        }} 
+                        className="p-2"
+                      >
+                        <Settings size={18} color="rgba(40,43,74,0.4)" />
+                      </TouchableOpacity>
                       <TouchableOpacity onPress={() => startEdit(col)} className="p-2">
                         <Edit2 size={18} color="rgba(40,43,74,0.4)" />
                       </TouchableOpacity>
