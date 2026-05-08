@@ -1,5 +1,8 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { View, ScrollView, TouchableOpacity } from "react-native";
+import { View, ScrollView, TouchableOpacity, RefreshControl } from "react-native";
+import * as Haptics from "expo-haptics";
+import Animated, { FadeInRight } from "react-native-reanimated";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text } from "@/components/ui/text";
 import { ArrowRight, Timer, PlusCircle, ShieldAlert, Sparkles } from "lucide-react-native";
@@ -21,6 +24,18 @@ export default function Dashboard() {
   const { items } = useItems();
   const { profile } = useProfile();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["items"] }),
+      queryClient.invalidateQueries({ queryKey: ["profile"] })
+    ]);
+    setRefreshing(false);
+  };
 
   const firstName = useMemo(() => {
     const name = profile?.display_name ?? "";
@@ -54,6 +69,9 @@ export default function Dashboard() {
         paddingBottom: Math.max(insets.bottom, 20) + 60
       }}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#F2C4CE" />
+      }
     >
       {/* Header */}
       <View className="px-6 pt-10 pb-2">
@@ -103,7 +121,13 @@ export default function Dashboard() {
       <View className="mt-10">
         <View className="flex-row justify-between items-end px-6 mb-5">
           <Text className="text-[#282B4A] text-xl font-bold">Waiting Room</Text>
-          <TouchableOpacity onPress={() => router.push("/(tabs)/items")} activeOpacity={0.6}>
+          <TouchableOpacity 
+            onPress={() => {
+              Haptics.selectionAsync();
+              router.push("/(tabs)/items");
+            }} 
+            activeOpacity={0.6}
+          >
             <View className="flex-row items-center gap-1 pb-1">
               <Text className="text-[#282B4A]/50 text-[12px] font-bold uppercase tracking-wider">View All</Text>
               <ArrowRight size={14} color="rgba(40,43,74,0.5)" />
@@ -118,7 +142,10 @@ export default function Dashboard() {
         >
           {/* Add New Button */}
           <TouchableOpacity
-            onPress={() => router.push("/(tabs)/add")}
+            onPress={() => {
+              Haptics.selectionAsync();
+              router.push("/(tabs)/add");
+            }}
             activeOpacity={0.8}
             className="mr-4 w-32 h-32 rounded-[28px] items-center justify-center"
             style={{ backgroundColor: '#282B4A' }}
@@ -134,13 +161,16 @@ export default function Dashboard() {
           </TouchableOpacity>
 
           {/* Item Cards */}
-          {waitingItems.slice(0, 5).map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              onPress={() => router.push({ pathname: "/item/[id]", params: { id: item.id } })}
-              activeOpacity={0.9}
-            >
-              <View className="mr-4 w-40 h-48 bg-white rounded-[28px] p-5 justify-between border border-[#282B4A]/[0.03] shadow-sm">
+          {waitingItems.slice(0, 5).map((item, index) => (
+            <Animated.View key={item.id} entering={FadeInRight.delay(index * 50).springify()}>
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  router.push({ pathname: "/item/[id]", params: { id: item.id } });
+                }}
+                activeOpacity={0.9}
+              >
+                <View className="mr-4 w-40 h-48 bg-white rounded-[28px] p-5 justify-between border border-[#282B4A]/[0.03] shadow-sm">
                 <View>
                   <View className="w-10 h-10 rounded-full bg-[#282B4A]/5 items-center justify-center mb-3">
                     <Timer size={18} color="rgba(40,43,74,0.6)" />
@@ -160,6 +190,7 @@ export default function Dashboard() {
                 </View>
               </View>
             </TouchableOpacity>
+          </Animated.View>
           ))}
         </ScrollView>
       </View>
@@ -177,7 +208,10 @@ export default function Dashboard() {
 
           <TouchableOpacity
             className="bg-[#282B4A] py-4 px-6 rounded-2xl items-center justify-center mt-2"
-            onPress={() => router.push("/(tabs)/items")}
+            onPress={() => {
+              Haptics.selectionAsync();
+              router.push("/(tabs)/items");
+            }}
             activeOpacity={0.85}
           >
             <Text className="text-[#EEEBDA] font-bold text-[14px] tracking-wide">Review my list</Text>

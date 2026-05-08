@@ -7,23 +7,25 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { useItems } from "@/hooks/useItems";
 import { useCollections } from "@/hooks/useCollections";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { DelayType, WishlistItem } from "@/lib/types";
 import { DelayPicker } from "@/components/DelayPicker";
 import { CollectionPickerModal } from "@/components/CollectionPickerModal";
 import { Camera, Sparkles, ChevronDown, Link2, Instagram, Video } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 import { computeRegretScore } from "@/lib/regret-score";
 import { scheduleReminder } from "@/lib/notifications";
 import { useAppStore } from "@/lib/store";
 
 export default function AddItem() {
   const insets = useSafeAreaInsets();
-  const [title, setTitle] = useState("");
+  const params = useLocalSearchParams();
+  const [title, setTitle] = useState((params.title as string) || "");
   const [price, setPrice] = useState("");
   const [notes, setNotes] = useState("");
   const [collectionId, setCollectionId] = useState<string | undefined>(undefined);
   const [delay, setDelay] = useState<DelayType>("7d");
-  const [sourceUrl, setSourceUrl] = useState("");
+  const [sourceUrl, setSourceUrl] = useState((params.url as string) || "");
   const [tiktokUrl, setTiktokUrl] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
   const [isPickerVisible, setIsPickerVisible] = useState(false);
@@ -104,8 +106,10 @@ export default function AddItem() {
         await scheduleReminder(savedItem, null, category);
       }
 
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace("/(tabs)/items");
     } catch (e: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       showAlert("Error", e.message, "error");
     }
   }
@@ -178,7 +182,10 @@ export default function AddItem() {
               <Label className="text-[10px] text-[#282B4A]/50 uppercase font-outfit-bold tracking-widest ml-1">Category</Label>
               <TouchableOpacity
                 className="bg-white h-14 rounded-2xl px-4 flex-row items-center justify-between border border-[#282B4A]/[0.05] shadow-sm"
-                onPress={() => setIsPickerVisible(true)}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setIsPickerVisible(true);
+                }}
                 activeOpacity={0.7}
               >
                 <Text className={`font-outfit-medium ${collectionId ? 'text-[#282B4A]' : 'text-[#282B4A]/40'}`}>
@@ -279,7 +286,10 @@ export default function AddItem() {
         visible={isPickerVisible} 
         onClose={() => setIsPickerVisible(false)} 
         selectedId={collectionId}
-        onSelect={setCollectionId}
+        onSelect={(id) => {
+          Haptics.selectionAsync();
+          setCollectionId(id);
+        }}
       />
     </KeyboardAvoidingView>
   );

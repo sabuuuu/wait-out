@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { View, ScrollView, TouchableOpacity, Share, Linking } from "react-native";
 import { useLocalSearchParams, Stack, useRouter } from "expo-router";
+import * as Haptics from "expo-haptics";
 import { useItems } from "@/hooks/useItems";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ export default function ItemDetail() {
 
   const handleDecision = async (status: 'bought' | 'forgot') => {
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       await updateItem({ id: item.id, status });
       router.back();
     } catch (e) {
@@ -46,6 +48,7 @@ export default function ItemDetail() {
 
   const handleDelete = async () => {
     try {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       await deleteItem(item.id);
       router.back();
     } catch (e) {

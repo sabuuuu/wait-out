@@ -35,7 +35,15 @@
       "expo-router",
       "expo-secure-store",
       "expo-sharing",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-share-intent",
+        {
+          "ios": {
+            "bundleId": "com.pausy.app.ShareExtension"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

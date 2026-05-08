@@ -1,6 +1,6 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { LayoutDashboard, List, PlusCircle, User } from "lucide-react-native";
+import { LayoutDashboard, List, PlusCircle, User, BarChart2 } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 import { NAV_THEME } from "@/lib/theme";
 
@@ -55,9 +55,17 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="stats"
         options={{
-          title: "Profile",
+          title: "Stats",
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => <BarChart2 color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: "Settings",
           headerShown: false,
           tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
         }}

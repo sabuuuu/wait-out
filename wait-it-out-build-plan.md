@@ -1788,7 +1788,7 @@ export default function CollectionSettingsScreen() {
 
 ---
 
-## Phase 6 — Settings Screen (global notification prefs)
+## Phase 6 — Settings Screen (global notification prefs) [x]
 
 ```tsx
 // app/(tabs)/settings.tsx
@@ -1886,7 +1886,7 @@ export default function SettingsScreen() {
 
 ---
 
-## Phase 7 — Stats Screen
+## Phase 7 — Stats Screen [x]
 
 ```tsx
 // app/(tabs)/stats.tsx
@@ -1902,9 +1902,9 @@ export default function SettingsScreen() {
 
 ---
 
-## Phase 8 — Share Extension (link capture)
+## Phase 8 — Share Extension (link capture) [x]
 
-### 8.1 Expo deep link approach (MVP)
+### 8.1 Expo deep link approach (MVP) [x]
 
 ```json
 // app.json
@@ -1939,7 +1939,7 @@ export function setupShareHandler() {
 }
 ```
 
-### 8.2 Clipboard detection (fallback)
+### 8.2 Clipboard detection (fallback) [x]
 
 On app foreground, check if clipboard holds a URL and offer to add it:
 
@@ -1959,7 +1959,7 @@ useAppState(async (state) => {
 });
 ```
 
-### 8.3 Native share extension (post-MVP)
+### 8.3 Native share extension (post-MVP) [x]
 
 ```bash
 npx expo prebuild
@@ -1969,7 +1969,7 @@ npx expo prebuild
 
 ---
 
-## Phase 9 — Polish & Aesthetic Details
+## Phase 9 — Polish & Aesthetic Details [x]
 
 | Detail | Implementation |
 |--------|----------------|

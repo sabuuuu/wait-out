@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { View, ScrollView, TouchableOpacity, FlatList } from "react-native";
+import { View, ScrollView, TouchableOpacity, FlatList, RefreshControl } from "react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text } from "@/components/ui/text";
 import { Card, CardContent } from "@/components/ui/card";
@@ -108,12 +110,16 @@ export default function Items() {
         onClose={() => setIsManageModalVisible(false)} 
       />
 
-      {/* Items List */}
       <FlatList
         data={filteredItems}
         keyExtractor={(item) => item.id}
-        refreshing={isLoading}
-        onRefresh={() => queryClient.invalidateQueries({ queryKey: ["items"] })}
+        refreshControl={
+          <RefreshControl 
+            refreshing={isLoading} 
+            onRefresh={() => queryClient.invalidateQueries({ queryKey: ["items"] })}
+            tintColor="#F2C4CE"
+          />
+        }
         contentContainerStyle={{ padding: 24, paddingBottom: Math.max(insets.bottom, 20) + 100 }}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
@@ -130,14 +136,18 @@ export default function Items() {
             </TouchableOpacity>
           </View>
         }
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() => router.push({ pathname: "/item/[id]", params: { id: item.id } })}
-            activeOpacity={0.7}
-            className="mb-4"
-          >
-            <View className="bg-white rounded-[32px] p-4 flex-row items-center border border-[#282B4A]/[0.03] shadow-sm">
-              <View className="w-20 h-20 bg-[#282B4A]/[0.04] rounded-2xl items-center justify-center mr-4">
+        renderItem={({ item, index }) => (
+          <Animated.View entering={FadeInUp.delay(index * 50).springify()}>
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.selectionAsync();
+                router.push({ pathname: "/item/[id]", params: { id: item.id } });
+              }}
+              activeOpacity={0.7}
+              className="mb-4"
+            >
+              <View className="bg-white rounded-[32px] p-4 flex-row items-center border border-[#282B4A]/[0.03] shadow-sm">
+                <View className="w-20 h-20 bg-[#282B4A]/[0.04] rounded-2xl items-center justify-center mr-4">
                 {item.status === 'waiting' && <Timer size={24} color="rgba(40,43,74,0.6)" />}
                 {item.status === 'bought' && <ShoppingBag size={24} color="#10b981" />}
                 {item.status === 'forgot' && <Ghost size={24} color="rgba(40,43,74,0.3)" />}
@@ -158,6 +168,7 @@ export default function Items() {
               </View>
             </View>
           </TouchableOpacity>
+        </Animated.View>
         )}
       />
     </View>
