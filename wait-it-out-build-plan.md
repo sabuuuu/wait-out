@@ -5,16 +5,16 @@
 
 ---
 
-## Phase 0 — Project Setup & Configuration
+## Phase 0 — Project Setup & Configuration [x]
 
-### 0.1 Init the Expo app
+### 0.1 Init the Expo app [x]
 
 ```bash
 npx create-expo-app@latest pausy --template blank-typescript
 cd pausy
 ```
 
-### 0.2 Install core dependencies
+### 0.2 Install core dependencies [x]
 
 ```bash
 # Navigation
@@ -60,7 +60,7 @@ npm install nanoid
 npx expo install expo-auth-session expo-crypto
 ```
 
-### 0.4 Load fonts (Outfit)
+### 0.4 Load fonts (Outfit) [x]
 
 ```bash
 npx expo install expo-font @expo-google-fonts/outfit
@@ -78,7 +78,7 @@ import {
 } from "@expo-google-fonts/outfit";
 ```
 
-### 0.5 Configure Native Reusables theme
+### 0.5 Configure Native Reusables theme [x]
 
 ```ts
 // lib/theme.ts
@@ -102,7 +102,7 @@ export const NAV_THEME = {
 };
 ```
 
-### 0.6 Supabase project setup
+### 0.6 Supabase project setup [x]
 
 1. Create a project at [supabase.com](https://supabase.com)
 2. Copy your `SUPABASE_URL` and `SUPABASE_ANON_KEY`
@@ -135,7 +135,7 @@ export const supabase = createClient(
 
 ---
 
-## Phase 0.7 — Database Schema (Drizzle ORM)
+## Phase 0.7 — Database Schema (Drizzle ORM) [x]
 
 We use **Drizzle ORM** to manage our Supabase PostgreSQL schema. This gives us type safety across the app and easy migrations.
 
@@ -167,7 +167,7 @@ create policy "users read own images"
 
 ---
 
-## Phase 0.8 — Folder Structure
+## Phase 0.8 — Folder Structure [x]
 
 ```
 pausy/
@@ -238,9 +238,9 @@ pausy/
 
 ---
 
-## Phase 1 — Design Tokens & Base Components
+## Phase 1 — Design Tokens & Base Components [x]
 
-### 1.1 Color constants
+### 1.1 Color constants [x]
 
 ```ts
 // constants/colors.ts
@@ -262,7 +262,7 @@ export const colors = {
 } as const;
 ```
 
-### 1.2 Button
+### 1.2 Button [x]
 
 ```tsx
 // components/ui/button.tsx
@@ -294,7 +294,7 @@ export function Button({ variant = "primary", className, ...props }: Props) {
 }
 ```
 
-### 1.3 Card
+### 1.3 Card [x]
 
 ```tsx
 // components/ui/card.tsx
@@ -314,7 +314,7 @@ export function Card({ className, ...props }: React.ComponentProps<typeof BaseCa
 }
 ```
 
-### 1.4 Risk badge
+### 1.4 Risk badge [x]
 
 ```tsx
 // components/ui/badge.tsx
@@ -342,9 +342,9 @@ export function RiskBadge({ risk, score }: { risk: Risk; score: number }) {
 
 ---
 
-## Phase 2 — Core Data Layer
+## Phase 2 — Core Data Layer [x]
 
-### 2.1 TypeScript types
+### 2.1 TypeScript types [x]
 
 ```ts
 // lib/types.ts
@@ -421,7 +421,7 @@ export interface NotificationPrefs {
 }
 ```
 
-### 2.2 Zustand store (optimistic local cache)
+### 2.2 Zustand store (optimistic local cache) [x]
 
 ```ts
 // lib/store.ts
@@ -481,7 +481,7 @@ export const useAppStore = create<AppStore>((set) => ({
 }));
 ```
 
-### 2.3 Supabase item helpers
+### 2.3 Supabase item helpers [x]
 
 ```ts
 // lib/items.ts
@@ -525,7 +525,7 @@ export async function deleteItem(id: string) {
 }
 ```
 
-### 2.4 Image upload helper
+### 2.4 Image upload helper [x]
 
 ```ts
 // lib/images.ts
@@ -570,7 +570,7 @@ export async function deleteImage(path: string) {
 }
 ```
 
-### 2.5 Collection helpers
+### 2.5 Collection helpers [x]
 
 ```ts
 // lib/collections.ts
@@ -621,7 +621,7 @@ export async function reorderCollections(orderedIds: string[]) {
 }
 ```
 
-### 2.6 Regret scoring algorithm
+### 2.6 Regret scoring algorithm [x]
 
 ```ts
 // lib/regret-score.ts
@@ -678,7 +678,7 @@ function formatHour(h: number) {
 }
 ```
 
-### 2.7 Notifications
+### 2.7 Notifications [x]
 
 ```ts
 // lib/notifications.ts
@@ -776,9 +776,9 @@ export async function scheduleDigest(collection: Collection) {
 
 ---
 
-## Phase 3 — Auth & Screens
+## Phase 3 — Auth & Screens [x]
 
-### 3.1 Root layout
+### 3.1 Root layout [x]
 
 ```tsx
 // app/_layout.tsx
@@ -829,7 +829,7 @@ export default function RootLayout() {
 }
 ```
 
-### 3.2 Auth Screens (Email + Google)
+### 3.2 Auth Screens (Email + Google) [x]
 
 ```tsx
 // app/(auth)/sign-in.tsx
@@ -934,7 +934,7 @@ export default function SignIn() {
 }
 ```
 
-### 3.3 Tab navigator
+### 3.3 Tab navigator [x]
 ```tsx
 // app/(tabs)/_layout.tsx
 import { Tabs } from "expo-router";
@@ -972,7 +972,7 @@ export default function TabLayout() {
 }
 ```
 
-### 3.3 Waiting screen (with collection filter)
+### 3.3 Waiting screen (with collection filter) [x]
 
 ```tsx
 // app/(tabs)/waiting.tsx
@@ -1046,7 +1046,7 @@ export default function WaitingScreen() {
 }
 ```
 
-### 3.4 Add Item screen (rich fields)
+### 3.4 Add Item screen (rich fields) [x]
 
 ```tsx
 // app/add-item.tsx
@@ -1285,9 +1285,9 @@ export default function AddItemScreen() {
 
 ---
 
-## Phase 4 — Feature Components
+## Phase 4 — Feature Components [x]
 
-### 4.1 SourceLinkInput
+### 4.1 SourceLinkInput [x]
 
 ```tsx
 // components/SourceLinkInput.tsx
@@ -1369,7 +1369,7 @@ export function SourceLinkInput({
 }
 ```
 
-### 4.2 CollectionPicker
+### 4.2 CollectionPicker [x]
 
 ```tsx
 // components/CollectionPicker.tsx
@@ -1423,7 +1423,7 @@ export function CollectionPicker({ collections, selected, onSelect, showAll = tr
 }
 ```
 
-### 4.3 WishlistItem row (with image + source badges)
+### 4.3 WishlistItem row (with image + source badges) [x]
 
 ```tsx
 // components/WishlistItem.tsx
@@ -1482,7 +1482,7 @@ export function WishlistItemRow({
 }
 ```
 
-### 4.4 DelayPicker (with custom date)
+### 4.4 DelayPicker (with custom date) [x]
 
 ```tsx
 // components/DelayPicker.tsx
@@ -1527,7 +1527,7 @@ export function DelayPicker({
 }
 ```
 
-### 4.5 RegretScore card
+### 4.5 RegretScore card [x]
 
 ```tsx
 // components/RegretScore.tsx
@@ -1575,7 +1575,7 @@ export function RegretScoreCard({
 
 ## Phase 5 — Collections Management
 
-### 5.1 Collections manage screen
+### 5.1 Collections manage screen [x]
 
 ```tsx
 // app/collections/manage.tsx

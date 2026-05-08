@@ -6,10 +6,11 @@ import { Text } from "@/components/ui/text";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAppStore } from "@/lib/store";
 import { ItemStatus } from "@/lib/types";
-import { Timer, ShoppingBag, Trash2, Ghost, ChevronRight, Filter } from "lucide-react-native";
+import { Timer, ShoppingBag, Trash2, Ghost, ChevronRight, Filter, Settings2 } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useItems } from "@/hooks/useItems";
 import { useCollections } from "@/hooks/useCollections";
+import { ManageCollectionsModal } from "@/components/ManageCollectionsModal";
 
 const STATUS_FILTERS: { label: string; value: ItemStatus | "all" }[] = [
   { label: "Waiting", value: "waiting" },
@@ -25,6 +26,7 @@ export default function Items() {
   const { collections } = useCollections();
   const { activeCollectionId, setActiveCollection } = useAppStore();
   const [statusFilter, setStatusFilter] = useState<ItemStatus | "all">("waiting");
+  const [isManageModalVisible, setIsManageModalVisible] = useState(false);
   const router = useRouter();
 
   const filteredItems = useMemo(() => {
@@ -38,34 +40,42 @@ export default function Items() {
   return (
     <View className="flex-1 bg-[#EEEBDA]" style={{ paddingTop: Math.max(insets.top, 20) }}>
       {/* Header */}
-      <View className="px-6 pt-10 pb-4">
-        <Text className="text-4xl font-fancy text-[#282B4A]">Waiting Room</Text>
-        <Text className="text-[13px] text-[#282B4A]/40 font-medium mt-2">Manage your intentional purchases.</Text>
+      <View className="px-6 pt-10 pb-4 flex-row items-center justify-between">
+        <View>
+          <Text className="text-4xl font-fancy text-[#282B4A]">Waiting Room</Text>
+          <Text className="text-[13px] text-[#282B4A]/40 font-medium mt-2">Manage your intentional purchases.</Text>
+        </View>
+        <TouchableOpacity 
+          onPress={() => setIsManageModalVisible(true)}
+          className="p-3 bg-white rounded-2xl border border-[#282B4A]/5 shadow-sm"
+        >
+          <Settings2 size={20} color="#282B4A" opacity={0.6} />
+        </TouchableOpacity>
       </View>
 
       {/* Collection Selector */}
       <View className="pt-4 pb-2">
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 24 }}
         >
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => setActiveCollection(null)}
             className={`px-4 py-2 rounded-full mr-2 ${!activeCollectionId ? 'bg-[#282B4A]' : 'bg-[#282B4A]/5'}`}
           >
-            <Text className={`font-bold text-xs uppercase tracking-widest ${!activeCollectionId ? 'text-[#EEEBDA]' : 'text-[#282B4A]/50'}`}>
+            <Text className={`font-outfit-bold text-xs uppercase tracking-widest ${!activeCollectionId ? 'text-[#EEEBDA]' : 'text-[#282B4A]/50'}`}>
               All
             </Text>
           </TouchableOpacity>
           {collections.map((col) => (
-            <TouchableOpacity 
+            <TouchableOpacity
               key={col.id}
               onPress={() => setActiveCollection(col.id)}
               className={`px-4 py-2 rounded-full mr-2 flex-row items-center ${activeCollectionId === col.id ? 'bg-[#282B4A]' : 'bg-[#282B4A]/5'}`}
             >
               <Text className="mr-2 text-base">{col.emoji}</Text>
-              <Text className={`font-bold text-xs uppercase tracking-widest ${activeCollectionId === col.id ? 'text-[#EEEBDA]' : 'text-[#282B4A]/50'}`}>
+              <Text className={`font-outfit-bold text-xs uppercase tracking-widest ${activeCollectionId === col.id ? 'text-[#EEEBDA]' : 'text-[#282B4A]/50'}`}>
                 {col.name}
               </Text>
             </TouchableOpacity>
@@ -77,18 +87,13 @@ export default function Items() {
           {STATUS_FILTERS.map((filter) => {
             const isActive = statusFilter === filter.value;
             return (
-              <TouchableOpacity 
+              <TouchableOpacity
                 key={filter.value}
                 onPress={() => setStatusFilter(filter.value)}
-                className="flex-1 py-2 rounded-xl items-center border shadow-sm"
-                style={{ 
-                  backgroundColor: isActive ? '#FFFFFF' : 'transparent',
-                  borderColor: isActive ? 'rgba(40,43,74,0.1)' : 'transparent'
-                }}
+                className={`flex-1 py-2.5 rounded-xl items-center border ${isActive ? 'bg-[#282B4A] border-[#282B4A]' : 'bg-[#282B4A]/5 border-transparent'}`}
               >
-                <Text 
-                  className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ color: isActive ? '#282B4A' : 'rgba(40,43,74,0.3)' }}
+                <Text
+                  className={`text-[10px] font-outfit-bold uppercase tracking-widest ${isActive ? 'text-[#EEEBDA]' : 'text-[#282B4A]/40'}`}
                 >
                   {filter.label}
                 </Text>
@@ -97,6 +102,11 @@ export default function Items() {
           })}
         </View>
       </View>
+
+      <ManageCollectionsModal 
+        visible={isManageModalVisible} 
+        onClose={() => setIsManageModalVisible(false)} 
+      />
 
       {/* Items List */}
       <FlatList
@@ -112,7 +122,7 @@ export default function Items() {
               <Ghost size={32} color="rgba(40,43,74,0.3)" />
             </View>
             <Text className="text-[#282B4A]/40 font-medium">Nothing here yet...</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => router.push("/(tabs)/add")}
               className="mt-4"
             >
@@ -121,7 +131,7 @@ export default function Items() {
           </View>
         }
         renderItem={({ item }) => (
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => router.push({ pathname: "/item/[id]", params: { id: item.id } })}
             activeOpacity={0.7}
             className="mb-4"

@@ -4,15 +4,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text } from "@/components/ui/text";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useItems } from "@/hooks/useItems";
 import { useCollections } from "@/hooks/useCollections";
 import { useRouter } from "expo-router";
 import { DelayType, WishlistItem } from "@/lib/types";
-import { SourceLinkInput } from "@/components/SourceLinkInput";
 import { DelayPicker } from "@/components/DelayPicker";
-import { Camera, Plus, Sparkles, ChevronDown } from "lucide-react-native";
+import { CollectionPickerModal } from "@/components/CollectionPickerModal";
+import { Camera, Sparkles, ChevronDown, Link2, Instagram, Video } from "lucide-react-native";
 import { computeRegretScore } from "@/lib/regret-score";
 import { scheduleReminder } from "@/lib/notifications";
 import { useAppStore } from "@/lib/store";
@@ -27,6 +26,7 @@ export default function AddItem() {
   const [sourceUrl, setSourceUrl] = useState("");
   const [tiktokUrl, setTiktokUrl] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
+  const [isPickerVisible, setIsPickerVisible] = useState(false);
   const { showAlert } = useAppStore();
   const { items, addItem, isAdding } = useItems();
   const { collections } = useCollections();
@@ -100,7 +100,6 @@ export default function AddItem() {
 
       const savedItem = await addItem(newItemData);
 
-      // Schedule Notification
       if (savedItem) {
         await scheduleReminder(savedItem, null, category);
       }
@@ -116,119 +115,172 @@ export default function AddItem() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1 bg-[#EEEBDA]"
     >
-      <ScrollView 
-        className="flex-1" 
-        contentContainerStyle={{ 
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
           paddingTop: Math.max(insets.top, 20),
-          paddingBottom: Math.max(insets.bottom, 20) + 100 
+          paddingBottom: Math.max(insets.bottom, 20) + 100
         }}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View className="px-6 pt-10 pb-4">
+        <View className="px-6 pt-6 pb-6">
           <Text className="text-4xl font-fancy text-[#282B4A]">Add Item</Text>
-          <Text className="text-[13px] text-[#282B4A]/40 font-medium mt-2">Commit to the wait.</Text>
+          <Text className="text-[13px] text-[#282B4A]/50 font-outfit-medium mt-1">Commit to the wait.</Text>
         </View>
 
-        <View className="px-6 gap-6">
-          <View className="items-center mb-4">
-            <TouchableOpacity className="w-24 h-24 bg-white rounded-[32px] items-center justify-center border border-[#282B4A]/10 shadow-sm">
-              <Camera size={24} color="rgba(40,43,74,0.3)" />
-              <Text className="text-[#282B4A]/40 text-[10px] font-bold uppercase tracking-wider mt-2">Add Photo</Text>
+        <View className="px-6 gap-7">
+
+          {/* Photo & Title Row */}
+          <View className="flex-row gap-4 items-end">
+            <TouchableOpacity
+              className="w-20 h-20 bg-white rounded-2xl items-center justify-center border border-[#282B4A]/[0.05] shadow-sm"
+              activeOpacity={0.7}
+            >
+              <Camera size={22} color="rgba(40,43,74,0.4)" />
+              <Text className="text-[#282B4A]/40 text-[9px] font-outfit-bold uppercase tracking-wider mt-1.5">Photo</Text>
             </TouchableOpacity>
+
+            <View className="flex-1 gap-2">
+              <Label nativeID="title-label" className="text-[10px] text-[#282B4A]/50 uppercase font-outfit-bold tracking-widest ml-1">What is it?</Label>
+              <Input
+                placeholder="Pink Mechanical Keyboard..."
+                placeholderTextColor="rgba(40,43,74,0.3)"
+                value={title}
+                onChangeText={setTitle}
+                className="bg-white border-[#282B4A]/[0.05] h-14 rounded-2xl px-4 text-[15px] font-outfit-medium text-[#282B4A] shadow-sm"
+                aria-labelledby="title-label"
+              />
+            </View>
           </View>
 
-          <View className="gap-6">
-            {/* Basic Info */}
-            <View className="gap-4">
-              <View className="gap-2">
-                <Label nativeID="title-label" className="text-[11px] text-[#282B4A]/50 uppercase font-bold tracking-widest ml-1">What is it?</Label>
+          {/* Price & Category Row */}
+          <View className="flex-row gap-4">
+            {/* Inline Price Input */}
+            <View className="flex-1 gap-2">
+              <Label nativeID="price-label" className="text-[10px] text-[#282B4A]/50 uppercase font-outfit-bold tracking-widest ml-1">Price</Label>
+              <View className="flex-row items-center bg-white border border-[#282B4A]/[0.05] h-14 rounded-2xl px-4 shadow-sm">
                 <Input
-                  placeholder="Pink Mechanical Keyboard..."
-                  value={title}
-                  onChangeText={setTitle}
-                  className="bg-white border-[#282B4A]/5 h-14 rounded-2xl px-5 text-lg font-medium shadow-sm"
-                  aria-labelledby="title-label"
+                  placeholder="0.00"
+                  placeholderTextColor="rgba(40,43,74,0.3)"
+                  value={price}
+                  onChangeText={setPrice}
+                  keyboardType="decimal-pad"
+                  className="flex-1 h-full text-[16px] font-outfit-bold text-[#282B4A] border-none bg-transparent shadow-none px-0"
+                  aria-labelledby="price-label"
+                />
+                <Text className="font-outfit-bold text-[#282B4A]/40 text-[13px] ml-2">DZD</Text>
+              </View>
+            </View>
+
+            {/* Category Picker */}
+            <View className="flex-1 gap-2">
+              <Label className="text-[10px] text-[#282B4A]/50 uppercase font-outfit-bold tracking-widest ml-1">Category</Label>
+              <TouchableOpacity
+                className="bg-white h-14 rounded-2xl px-4 flex-row items-center justify-between border border-[#282B4A]/[0.05] shadow-sm"
+                onPress={() => setIsPickerVisible(true)}
+                activeOpacity={0.7}
+              >
+                <Text className={`font-outfit-medium ${collectionId ? 'text-[#282B4A]' : 'text-[#282B4A]/40'}`}>
+                  {collections.find(c => c.id === collectionId)?.name || "Select..."}
+                </Text>
+                <ChevronDown size={16} color="rgba(40,43,74,0.3)" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Delay Picker */}
+          <View className="gap-3 mt-2">
+            <View className="flex-row items-center gap-1.5 ml-1">
+              <Sparkles size={14} color="#282B4A" opacity={0.4} />
+              <Label className="text-[10px] text-[#282B4A]/50 uppercase font-outfit-bold tracking-widest">How long will you wait?</Label>
+            </View>
+            <DelayPicker selected={delay} onChange={setDelay} />
+          </View>
+
+          {/* Unified Links Card */}
+          <View className="gap-2">
+            <Label className="text-[10px] text-[#282B4A]/50 uppercase font-outfit-bold tracking-widest ml-1">Where did you find it?</Label>
+            <View className="bg-white rounded-[20px] border border-[#282B4A]/[0.05] shadow-sm overflow-hidden">
+
+              {/* Web Link */}
+              <View className="flex-row items-center px-4 h-14 border-b border-[#282B4A]/[0.04]">
+                <Link2 size={18} color="rgba(40,43,74,0.4)" />
+                <Input
+                  placeholder="Website Link..."
+                  placeholderTextColor="rgba(40,43,74,0.3)"
+                  value={sourceUrl}
+                  onChangeText={setSourceUrl}
+                  autoCapitalize="none"
+                  keyboardType="url"
+                  className="flex-1 h-full ml-3 text-[14px] text-[#282B4A] border-none bg-transparent shadow-none px-0 font-outfit"
                 />
               </View>
 
-              <View className="flex-row gap-4">
-                <View className="flex-1 gap-2">
-                  <Label nativeID="price-label" className="text-[11px] text-[#282B4A]/50 uppercase font-bold tracking-widest ml-1">Price</Label>
-                  <View className="relative">
-                    <Text className="absolute left-4 top-4.5 z-10 font-bold text-[#282B4A]/30">DZD</Text>
-                    <Input
-                      placeholder="0.00"
-                      value={price}
-                      onChangeText={setPrice}
-                      keyboardType="numeric"
-                      className="bg-white border-[#282B4A]/5 h-14 rounded-2xl pl-12 font-bold shadow-sm"
-                      aria-labelledby="price-label"
-                    />
-                  </View>
-                </View>
+              {/* Instagram */}
+              <View className="flex-row items-center px-4 h-14 border-b border-[#282B4A]/[0.04]">
+                <Instagram size={18} color="rgba(40,43,74,0.4)" />
+                <Input
+                  placeholder="Instagram Post..."
+                  placeholderTextColor="rgba(40,43,74,0.3)"
+                  value={instagramUrl}
+                  onChangeText={setInstagramUrl}
+                  autoCapitalize="none"
+                  keyboardType="url"
+                  className="flex-1 h-full ml-3 text-[14px] text-[#282B4A] border-none bg-transparent shadow-none px-0 font-outfit"
+                />
+              </View>
 
-                <View className="flex-1 gap-2">
-                  <Label className="text-[11px] text-[#282B4A]/50 uppercase font-bold tracking-widest ml-1">Category</Label>
-                  <TouchableOpacity
-                    className="bg-white h-14 rounded-2xl px-4 flex-row items-center justify-between border border-[#282B4A]/5 shadow-sm"
-                    onPress={() => {/* Show category picker modal */ }}
-                  >
-                    <Text className="text-[#282B4A] font-medium">
-                      {collections.find(c => c.id === collectionId)?.name || "Select..."}
-                    </Text>
-                    <ChevronDown size={16} color="rgba(40,43,74,0.3)" />
-                  </TouchableOpacity>
-                </View>
+              {/* TikTok */}
+              <View className="flex-row items-center px-4 h-14">
+                <Video size={18} color="rgba(40,43,74,0.4)" />
+                <Input
+                  placeholder="TikTok Video..."
+                  placeholderTextColor="rgba(40,43,74,0.3)"
+                  value={tiktokUrl}
+                  onChangeText={setTiktokUrl}
+                  autoCapitalize="none"
+                  keyboardType="url"
+                  className="flex-1 h-full ml-3 text-[14px] text-[#282B4A] border-none bg-transparent shadow-none px-0 font-outfit"
+                />
               </View>
             </View>
-
-            {/* Delay Picker */}
-            <View className="gap-3">
-              <View className="flex-row items-center gap-2 ml-1">
-                <Sparkles size={14} color="#282B4A" opacity={0.5} />
-                <Label className="text-[11px] text-[#282B4A]/50 uppercase font-bold tracking-widest">How long will you wait?</Label>
-              </View>
-              <DelayPicker selected={delay} onChange={setDelay} />
-            </View>
-
-            {/* Source Links */}
-            <SourceLinkInput
-              sourceUrl={sourceUrl}
-              onChangeSource={setSourceUrl}
-              tiktokUrl={tiktokUrl}
-              onChangeTiktok={setTiktokUrl}
-              instagramUrl={instagramUrl}
-              onChangeInstagram={setInstagramUrl}
-            />
-
-            {/* Notes */}
-            <View className="gap-2">
-              <Label className="text-[11px] text-[#282B4A]/50 uppercase font-bold tracking-widest ml-1">Notes</Label>
-              <Input
-                placeholder="Why do you want this?"
-                value={notes}
-                onChangeText={setNotes}
-                multiline
-                numberOfLines={3}
-                className="bg-white border-[#282B4A]/5 p-4 h-24 rounded-2xl shadow-sm"
-              />
-            </View>
-
-            <TouchableOpacity
-              onPress={handleSave}
-              disabled={isAdding || !title}
-              className={`h-14 rounded-2xl items-center justify-center mt-4 bg-[#282B4A] ${isAdding || !title ? 'opacity-50' : 'opacity-100'} shadow-md`}
-              activeOpacity={0.8}
-            >
-              <Text className="text-[#EEEBDA] font-bold text-[16px] tracking-wide">
-                {isAdding ? "Saving..." : "Start Waiting"}
-              </Text>
-            </TouchableOpacity>
           </View>
+
+          {/* Notes */}
+          <View className="gap-2 mt-2">
+            <Label className="text-[10px] text-[#282B4A]/50 uppercase font-outfit-bold tracking-widest ml-1">Notes</Label>
+            <Input
+              placeholder="Why do you want this? How will it improve your life?"
+              placeholderTextColor="rgba(40,43,74,0.3)"
+              value={notes}
+              onChangeText={setNotes}
+              multiline
+              textAlignVertical="top"
+              className="bg-white border-[#282B4A]/[0.05] p-5 h-28 rounded-[20px] shadow-sm text-[14px] text-[#282B4A] leading-5 font-outfit"
+            />
+          </View>
+
+          {/* Save Button */}
+          <TouchableOpacity
+            onPress={handleSave}
+            disabled={isAdding || !title}
+            className={`h-14 rounded-[20px] items-center justify-center mt-4 bg-[#282B4A] ${isAdding || !title ? 'opacity-50' : 'opacity-100'} shadow-md`}
+            activeOpacity={0.8}
+          >
+            <Text className="text-[#EEEBDA] font-outfit-bold text-[15px] tracking-wide">
+              {isAdding ? "Saving..." : "Start Waiting"}
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <CollectionPickerModal 
+        visible={isPickerVisible} 
+        onClose={() => setIsPickerVisible(false)} 
+        selectedId={collectionId}
+        onSelect={setCollectionId}
+      />
     </KeyboardAvoidingView>
   );
 }
-
