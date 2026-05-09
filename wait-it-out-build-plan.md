@@ -20,7 +20,7 @@ V2 replaces the hand-tuned `regret-score.ts` heuristic with a real ML pipeline t
 
 ---
 
-## Phase V2.0 — New Data We Need to Collect
+## Phase V2.0 — New Data We Need to Collect [x]
 
 Before training anything, we need richer signals. These extend the existing `WishlistItem` type and Supabase schema.
 
@@ -85,7 +85,7 @@ export function OutcomePrompt({ item, onDone }: { item: WishlistItem; onDone: ()
 
 ---
 
-## Phase V2.1 — Feature Engineering
+## Phase V2.1 — Feature Engineering [x]
 
 All features are computed **at item-add time** and stored in the DB. No inference-time lookups needed.
 
@@ -151,7 +151,7 @@ export function extractFeatures(item: WishlistItem, history: WishlistItem[]): ML
 
 ---
 
-## Phase V2.2 — ML Model (Python Microservice)
+## Phase V2.2 — ML Model (Python Microservice) [x]
 
 The model runs as a lightweight **FastAPI** service. It exposes two endpoints: `POST /predict` and `POST /train`.
 
@@ -290,7 +290,7 @@ insert into storage.buckets (id, name, public) values ('ml-models', 'ml-models',
 
 ---
 
-## Phase V2.3 — Docker Setup
+## Phase V2.3 — Docker Setup [x]
 
 ### V2.3.1 — `model/requirements.txt`
 
@@ -542,7 +542,7 @@ For production scale, set workers based on available RAM (2 workers per CPU, ~20
 
 ---
 
-## Phase V2.4 — App Integration
+## Phase V2.4 — App Integration [x]
 
 ### V2.4.1 — Call ML service from the app
 
@@ -636,7 +636,7 @@ serve(async (req) => {
 
 ---
 
-## Phase V2.5 — New UI: ML Score Card
+## Phase V2.5 — New UI: ML Score Card [x]
 
 Replace the V1 `RegretScore.tsx` component with an ML-aware version that shows **why** the model thinks you'll regret it.
 
@@ -708,7 +708,7 @@ export function MLScoreCard({
 
 ---
 
-## Phase V2.6 — Cold Start Strategy
+## Phase V2.6 — Cold Start Strategy [x]
 
 New users have no training data. Handle gracefully:
 

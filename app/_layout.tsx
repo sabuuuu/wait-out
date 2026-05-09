@@ -70,10 +70,11 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (hasShareIntent && shareIntent.value) {
+    const sharedContent = shareIntent.webUrl || shareIntent.text;
+    if (hasShareIntent && sharedContent) {
       router.push({
         pathname: "/(tabs)/add",
-        params: { url: shareIntent.value }
+        params: { url: sharedContent }
       });
       resetShareIntent();
     }

@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, boolean, timestamp, numeric, jsonb, time, pgSchema } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, integer, boolean, timestamp, numeric, jsonb, time, pgSchema, real } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 
 export const authSchema = pgSchema("auth");
@@ -56,6 +56,17 @@ export const items = pgTable("items", {
 
   notifId: text("notif_id"),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+
+  // V2: ML feature signals
+  addedDayOfWeek: integer("added_day_of_week"),
+  sessionItemsCount: integer("session_items_count").default(1),
+  priceVsCatAvg: real("price_vs_cat_avg"),
+  categorySlug: text("category_slug"),
+  sourcePlatform: text("source_platform").default("unknown"),
+
+  // V2: outcome label
+  outcome: text("outcome"),
+  outcomeSetAt: timestamp("outcome_set_at", { withTimezone: true }),
 });
 
 export const notificationPrefs = pgTable("notification_prefs", {

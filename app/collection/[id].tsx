@@ -30,6 +30,7 @@ export default function CollectionSettingsScreen() {
   if (!col) return null;
 
   async function handleSave() {
+    if (!col) return;
     setSaving(true);
     try {
       const updated = await updateCollection({

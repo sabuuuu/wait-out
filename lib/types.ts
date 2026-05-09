@@ -45,10 +45,21 @@ export interface WishlistItem {
 
   // Score
   regret_score: number;
-  score_factors?: ScoreFactors;
+  score_factors?: ScoreFactors | any;
 
   notif_id?: string;
   updated_at: string;
+
+  // V2: ML feature signals
+  added_day_of_week?: number;
+  session_items_count?: number;
+  price_vs_cat_avg?: number | null;
+  category_slug?: string | null;
+  source_platform?: "tiktok" | "instagram" | "web" | "unknown";
+
+  // V2: outcome label
+  outcome?: "regretted" | "happy" | "neutral" | null;
+  outcome_set_at?: string | null;
 }
 
 export interface ScoreFactors {

@@ -126,7 +126,7 @@ export function ManageCollectionsModal({ visible, onClose }: Props) {
                       <TouchableOpacity 
                         onPress={() => { 
                           onClose(); 
-                          router.push({ pathname: "/collection/[id]", params: { id: col.id } }); 
+                          router.push(`/collection/${col.id}` as any); 
                         }} 
                         className="p-2"
                       >

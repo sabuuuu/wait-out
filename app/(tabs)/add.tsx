@@ -16,6 +16,7 @@ import * as Haptics from "expo-haptics";
 import { computeRegretScore } from "@/lib/regret-score";
 import { scheduleReminder } from "@/lib/notifications";
 import { useAppStore } from "@/lib/store";
+import { getMLRegretScore } from "@/lib/ml-predict";
 
 export default function AddItem() {
   const insets = useSafeAreaInsets();
@@ -73,12 +74,39 @@ export default function AddItem() {
 
     const historyIgnored = collectionItems.filter(i => i.status === 'forgot').length;
 
-    const { score, factors } = computeRegretScore(
+    const { score: v1Score, factors: v1Factors } = computeRegretScore(
       { price: priceNum, added_hour: addedHour, collection_id: collectionId },
       avgSpend,
       historyIgnored,
       category?.name
     );
+
+    const detectPlatform = (url: string): "tiktok" | "instagram" | "web" | "unknown" => {
+      if (!url) return "unknown";
+      if (url.includes("tiktok")) return "tiktok";
+      if (url.includes("instagram")) return "instagram";
+      return "web";
+    };
+
+    const mlItem: any = {
+      user_id: user.id,
+      added_hour: addedHour,
+      price: priceNum,
+      category_slug: category?.name?.toLowerCase() || "other",
+      source_platform: detectPlatform(tiktokUrl || instagramUrl || sourceUrl),
+      added_day_of_week: new Date().getDay(),
+      session_items_count: 1,
+    };
+
+    const mlResult = await getMLRegretScore(mlItem, items);
+
+    const score = mlResult.probability !== null 
+      ? Math.round(mlResult.probability * 100) 
+      : v1Score;
+
+    const factors = mlResult.probability !== null 
+      ? mlResult.topFactors 
+      : v1Factors;
 
     try {
       const newItemData: Omit<WishlistItem, "id" | "updated_at"> = {

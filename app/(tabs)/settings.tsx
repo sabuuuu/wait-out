@@ -59,7 +59,7 @@ export default function SettingsScreen() {
 
         <TouchableOpacity 
           className="mt-6 px-6 py-2.5 rounded-full bg-[#282B4A] shadow-sm"
-          onPress={() => router.push("/(tabs)/settings")} // Placeholder for future edit profile screen
+          onPress={() => {}} // Placeholder for future edit profile screen
         >
           <Text className="text-[#EEEBDA] text-xs font-bold uppercase tracking-widest">Edit Profile</Text>
         </TouchableOpacity>
@@ -131,7 +131,7 @@ export default function SettingsScreen() {
               </View>
               <Switch
                 value={prefs?.global_enabled ?? true}
-                onValueChange={(val) => updatePrefs({ global_enabled: val })}
+                onValueChange={(val) => { updatePrefs({ global_enabled: val }); }}
                 thumbColor="#EEEBDA"
                 trackColor={{ true: '#282B4A', false: 'rgba(40,43,74,0.1)' }}
               />
@@ -176,7 +176,7 @@ export default function SettingsScreen() {
                   </View>
                   <Switch
                     value={prefs?.notify_digest ?? false}
-                    onValueChange={(val) => updatePrefs({ notify_digest: val })}
+                    onValueChange={(val) => { updatePrefs({ notify_digest: val }); }}
                     thumbColor="#EEEBDA"
                     trackColor={{ true: '#282B4A', false: 'rgba(40,43,74,0.1)' }}
                   />

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { View, ScrollView, TouchableOpacity, Share, Linking } from "react-native";
 import { useLocalSearchParams, Stack, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
@@ -6,6 +6,8 @@ import { useItems } from "@/hooks/useItems";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { OutcomePrompt } from "@/components/OutcomePrompt";
+import { MLScoreCard } from "@/components/MLScoreCard";
 import {
   Timer,
   ShoppingBag,
@@ -22,8 +24,10 @@ export default function ItemDetail() {
   const { id } = useLocalSearchParams();
   const { items, updateItem, deleteItem } = useItems();
   const router = useRouter();
+  const [showOutcome, setShowOutcome] = useState(false);
 
   const item = useMemo(() => items.find((i) => i.id === id), [items, id]);
+  const labeledCount = useMemo(() => items.filter(i => i.outcome !== null && i.outcome !== undefined).length, [items]);
 
   if (!item) {
     return (
@@ -40,7 +44,7 @@ export default function ItemDetail() {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       await updateItem({ id: item.id, status });
-      router.back();
+      setShowOutcome(true);
     } catch (e) {
       console.error(e);
     }
@@ -116,17 +120,15 @@ export default function ItemDetail() {
           </View>
         </View>
 
-        {/* Regret Score Alert */}
-        {item.regret_score > 30 && (
-          <Card className="bg-destructive/10 border-destructive/20 mb-6">
-            <CardContent className="p-4 flex-row items-center gap-3">
-              <AlertCircle size={20} className="text-destructive" />
-              <Text className="flex-1 text-destructive font-medium text-sm">
-                High Regret Risk: We estimate a {item.regret_score}% chance you might regret this later.
-              </Text>
-            </CardContent>
-          </Card>
-        )}
+        {/* ML Score Card */}
+        <View className="mb-6">
+          <MLScoreCard 
+            probability={item.score_factors && Array.isArray(item.score_factors) ? item.regret_score / 100 : null}
+            topFactors={Array.isArray(item.score_factors) ? item.score_factors : []}
+            fallbackScore={item.regret_score}
+            labeledCount={labeledCount}
+          />
+        </View>
 
         {/* Progress Card */}
         <Card className="bg-card border-none shadow-sm mb-6">
@@ -206,6 +208,16 @@ export default function ItemDetail() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {showOutcome && (
+        <OutcomePrompt 
+          item={item} 
+          onDone={() => {
+            setShowOutcome(false);
+            router.back();
+          }} 
+        />
+      )}
     </ScrollView>
   );
 }
