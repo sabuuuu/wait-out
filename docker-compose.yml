@@ -9,7 +9,7 @@ services:
     ports:
       - "8000:8000"
     env_file:
-      - ./model/.env.dev              # SUPABASE_URL, SUPABASE_SERVICE_KEY, ML_API_SECRET
+      - ./model/.env.dev              # SUPABASE_URL, SUPABASE_SERVICE_KEY, SUPABASE_JWT_SECRET
     volumes:
       - ./model:/app                  # bind-mount for hot-reload
     healthcheck:

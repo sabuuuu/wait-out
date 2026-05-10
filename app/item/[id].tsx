@@ -3,11 +3,11 @@ import { View, ScrollView, TouchableOpacity, Share, Linking } from "react-native
 import { useLocalSearchParams, Stack, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useItems } from "@/hooks/useItems";
+import { useAppStore } from "@/lib/store";
 import { Text } from "@/components/ui/text";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { OutcomePrompt } from "@/components/OutcomePrompt";
 import { MLScoreCard } from "@/components/MLScoreCard";
+import { MLTopFactor } from "@/lib/types";
 import {
   Timer,
   ShoppingBag,
@@ -15,38 +15,47 @@ import {
   Trash2,
   ExternalLink,
   Clock,
-  AlertCircle,
   Share2,
-  ChevronLeft
+  ChevronLeft,
 } from "lucide-react-native";
+
+const PALETTE = "#282B4A";
+const PARCHMENT = "#EEEBDA";
 
 export default function ItemDetail() {
   const { id } = useLocalSearchParams();
   const { items, updateItem, deleteItem } = useItems();
+  const { showAlert } = useAppStore();
   const router = useRouter();
   const [showOutcome, setShowOutcome] = useState(false);
 
   const item = useMemo(() => items.find((i) => i.id === id), [items, id]);
-  const labeledCount = useMemo(() => items.filter(i => i.outcome !== null && i.outcome !== undefined).length, [items]);
+  const labeledCount = useMemo(
+    () => items.filter(i => i.outcome != null).length,
+    [items]
+  );
 
   if (!item) {
     return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <Text>Item not found</Text>
-        <Button onPress={() => router.back()} className="mt-4">
-          <Text>Go Back</Text>
-        </Button>
+      <View className="flex-1 items-center justify-center bg-[#EEEBDA]">
+        <Text className="text-[#282B4A]/60 font-medium">Item not found</Text>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="mt-4 px-6 py-3 bg-[#282B4A] rounded-2xl"
+        >
+          <Text className="text-[#EEEBDA] font-bold">Go Back</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
-  const handleDecision = async (status: 'bought' | 'forgot') => {
+  const handleDecision = async (status: "bought" | "forgot") => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       await updateItem({ id: item.id, status });
       setShowOutcome(true);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      showAlert("Error", e?.message ?? "Could not update item.", "error");
     }
   };
 
@@ -55,8 +64,8 @@ export default function ItemDetail() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       await deleteItem(item.id);
       router.back();
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      showAlert("Error", e?.message ?? "Could not delete item.", "error");
     }
   };
 
@@ -66,8 +75,8 @@ export default function ItemDetail() {
         message: `I'm waiting out this purchase: ${item.title} (${item.currency}${item.price}). Patience is a virtue! 🎀`,
         url: item.source_url,
       });
-    } catch (error) {
-      console.log(error);
+    } catch {
+      // Share sheet dismissed — not an error worth surfacing
     }
   };
 
@@ -75,106 +84,160 @@ export default function ItemDetail() {
     if (url) Linking.openURL(url);
   };
 
-  const isExpired = new Date(item.remind_at) <= new Date();
+  // Compute actual elapsed progress (0–1) from added_at → remind_at
+  const now = Date.now();
+  const addedMs  = new Date(item.added_at).getTime();
+  const remindMs = new Date(item.remind_at).getTime();
+  const elapsed  = remindMs > addedMs
+    ? Math.min(1, (now - addedMs) / (remindMs - addedMs))
+    : 1;
+  const isExpired = elapsed >= 1;
+
+  // Determine whether score_factors holds ML top-factors or V1 ScoreFactors
+  const mlTopFactors = Array.isArray(item.score_factors)
+    ? (item.score_factors as MLTopFactor[])
+    : [];
+  const hasMLScore = mlTopFactors.length > 0;
+
+  const statusColor = {
+    waiting: PALETTE,
+    bought:  "#10b981",
+    forgot:  `${PALETTE}60`,
+    snoozed: `${PALETTE}60`,
+  }[item.status] ?? PALETTE;
 
   return (
-    <ScrollView className="flex-1 bg-background">
+    <ScrollView className="flex-1 bg-[#EEEBDA]">
       <Stack.Screen
         options={{
           title: "Item Details",
+          headerStyle: { backgroundColor: PARCHMENT },
+          headerTitleStyle: { fontFamily: "Outfit_700Bold", color: PALETTE },
+          headerShadowVisible: false,
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()} className="ml-2">
-              <ChevronLeft size={24} className="text-foreground" />
+              <ChevronLeft size={24} color={PALETTE} />
             </TouchableOpacity>
           ),
           headerRight: () => (
             <TouchableOpacity onPress={handleShare} className="mr-2">
-              <Share2 size={20} className="text-foreground" />
+              <Share2 size={20} color={PALETTE} />
             </TouchableOpacity>
           ),
         }}
       />
 
       {/* Hero Section */}
-      <View className="h-64 bg-muted items-center justify-center relative">
-        <View className="bg-card/50 p-6 rounded-[40px]">
-          {item.status === 'waiting' && <Timer size={64} className="text-primary" />}
-          {item.status === 'bought' && <ShoppingBag size={64} className="text-blue-300" />}
-          {item.status === 'forgot' && <Ghost size={64} className="text-muted-foreground" />}
+      <View className="h-56 bg-[#282B4A] items-center justify-center relative">
+        <View className="bg-white/10 p-6 rounded-[40px]">
+          {item.status === "waiting"  && <Timer       size={64} color={PARCHMENT} />}
+          {item.status === "bought"   && <ShoppingBag size={64} color="#10b981" />}
+          {item.status === "forgot"   && <Ghost       size={64} color={`${PARCHMENT}80`} />}
+          {item.status === "snoozed"  && <Timer       size={64} color={`${PARCHMENT}80`} />}
         </View>
 
         {/* Status Badge */}
-        <View className="absolute bottom-6 right-6 bg-blue-500 px-4 py-2 rounded-2xl">
-          <Text className="text-white font-bold text-xs uppercase tracking-widest">{item.status}</Text>
+        <View
+          className="absolute bottom-5 right-5 px-4 py-2 rounded-2xl"
+          style={{ backgroundColor: statusColor }}
+        >
+          <Text className="text-[#EEEBDA] font-bold text-xs uppercase tracking-widest">
+            {item.status}
+          </Text>
         </View>
       </View>
 
-      <View className="p-6 -mt-8 bg-background rounded-t-[40px]">
-        <View className="flex-row justify-between items-start mb-4">
+      <View className="p-6 -mt-8 bg-[#EEEBDA] rounded-t-[40px]">
+        {/* Title + price */}
+        <View className="flex-row justify-between items-start mb-6">
           <View className="flex-1 mr-4">
-            <Text className="text-2xl font-display text-foreground">{item.title}</Text>
-            <Text className="text-primary text-2xl font-bold mt-1">{item.currency}{item.price}</Text>
+            <Text className="text-2xl font-fancy text-[#282B4A]">{item.title}</Text>
+            <Text className="text-[#282B4A] text-2xl font-bold mt-1">
+              {item.price?.toLocaleString()} {item.currency}
+            </Text>
           </View>
-          <View className="bg-secondary px-3 py-1.5 rounded-xl">
-            <Text className="text-primary font-bold text-xs uppercase">{item.delay_type}</Text>
+          <View className="bg-[#282B4A]/10 px-3 py-1.5 rounded-xl">
+            <Text className="text-[#282B4A] font-bold text-xs uppercase">{item.delay_type}</Text>
           </View>
         </View>
 
         {/* ML Score Card */}
         <View className="mb-6">
-          <MLScoreCard 
-            probability={item.score_factors && Array.isArray(item.score_factors) ? item.regret_score / 100 : null}
-            topFactors={Array.isArray(item.score_factors) ? item.score_factors : []}
+          <MLScoreCard
+            probability={hasMLScore ? item.regret_score / 100 : null}
+            topFactors={mlTopFactors}
             fallbackScore={item.regret_score}
             labeledCount={labeledCount}
           />
         </View>
 
         {/* Progress Card */}
-        <Card className="bg-card border-none shadow-sm mb-6">
-          <CardContent className="p-5">
-            <View className="flex-row items-center justify-between mb-3">
-              <View className="flex-row items-center gap-2">
-                <Clock size={16} className="text-blue-300" />
-                <Text className="text-blue-300 font-bold text-xs uppercase">Time Left</Text>
-              </View>
-              <Text className="text-foreground font-bold">
-                {isExpired ? "Time to decide!" : "Waiting..."}
+        <View className="bg-white rounded-[28px] p-5 border border-[#282B4A]/[0.05] shadow-sm mb-6">
+          <View className="flex-row items-center justify-between mb-3">
+            <View className="flex-row items-center gap-2">
+              <Clock size={16} color={PALETTE} opacity={0.5} />
+              <Text className="text-[#282B4A]/50 font-bold text-xs uppercase tracking-wide">
+                Time Left
               </Text>
             </View>
-            <View className="h-2 bg-muted rounded-full overflow-hidden">
-              <View className="h-full bg-primary" style={{ width: isExpired ? '100%' : '40%' }} />
-            </View>
-            <Text className="text-muted-foreground text-xs mt-3">
-              Added: {new Date(item.added_at).toLocaleDateString()} ·
-              Ends: {new Date(item.remind_at).toLocaleDateString()}
+            <Text className="text-[#282B4A] font-bold text-sm">
+              {isExpired ? "Time to decide!" : "Waiting..."}
             </Text>
-          </CardContent>
-        </Card>
+          </View>
+          <View className="h-2 bg-[#282B4A]/[0.06] rounded-full overflow-hidden">
+            <View
+              className="h-full bg-[#282B4A] rounded-full"
+              style={{ width: `${Math.round(elapsed * 100)}%` }}
+            />
+          </View>
+          <Text className="text-[#282B4A]/40 text-xs mt-3">
+            Added: {new Date(item.added_at).toLocaleDateString()} ·{" "}
+            Ends: {new Date(item.remind_at).toLocaleDateString()}
+          </Text>
+        </View>
 
         {/* Notes */}
         {item.notes && (
           <View className="mb-6">
-            <Text className="text-xs text-blue-300 font-bold uppercase mb-2 ml-1">Your Thoughts</Text>
-            <Text className="text-foreground italic leading-5">"{item.notes}"</Text>
+            <Text className="text-[10px] text-[#282B4A]/40 font-bold uppercase tracking-widest mb-2 ml-1">
+              Your Thoughts
+            </Text>
+            <Text className="text-[#282B4A]/70 italic leading-5">"{item.notes}"</Text>
           </View>
         )}
 
         {/* Links */}
         {(item.source_url || item.tiktok_url || item.instagram_url) && (
           <View className="mb-8">
-            <Text className="text-xs text-blue-300 font-bold uppercase mb-3 ml-1">Sources</Text>
+            <Text className="text-[10px] text-[#282B4A]/40 font-bold uppercase tracking-widest mb-3 ml-1">
+              Sources
+            </Text>
             <View className="flex-row flex-wrap gap-2">
               {item.source_url && (
-                <TouchableOpacity onPress={() => openLink(item.source_url)} className="flex-row items-center bg-muted px-4 py-2 rounded-xl">
-                  <ExternalLink size={14} className="text-foreground mr-2" />
-                  <Text className="text-foreground font-bold text-xs">Website</Text>
+                <TouchableOpacity
+                  onPress={() => openLink(item.source_url)}
+                  className="flex-row items-center gap-2 bg-[#282B4A]/[0.06] px-4 py-2.5 rounded-xl"
+                >
+                  <ExternalLink size={14} color={PALETTE} opacity={0.6} />
+                  <Text className="text-[#282B4A] font-bold text-xs">Website</Text>
                 </TouchableOpacity>
               )}
               {item.tiktok_url && (
-                <TouchableOpacity onPress={() => openLink(item.tiktok_url)} className="flex-row items-center bg-muted px-4 py-2 rounded-xl">
-                  <ExternalLink size={14} className="text-foreground mr-2" />
-                  <Text className="text-foreground font-bold text-xs">TikTok</Text>
+                <TouchableOpacity
+                  onPress={() => openLink(item.tiktok_url)}
+                  className="flex-row items-center gap-2 bg-[#282B4A]/[0.06] px-4 py-2.5 rounded-xl"
+                >
+                  <ExternalLink size={14} color={PALETTE} opacity={0.6} />
+                  <Text className="text-[#282B4A] font-bold text-xs">TikTok</Text>
+                </TouchableOpacity>
+              )}
+              {item.instagram_url && (
+                <TouchableOpacity
+                  onPress={() => openLink(item.instagram_url)}
+                  className="flex-row items-center gap-2 bg-[#282B4A]/[0.06] px-4 py-2.5 rounded-xl"
+                >
+                  <ExternalLink size={14} color={PALETTE} opacity={0.6} />
+                  <Text className="text-[#282B4A] font-bold text-xs">Instagram</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -183,39 +246,40 @@ export default function ItemDetail() {
 
         {/* Decision Buttons */}
         <View className="gap-3 mt-4">
-          <Button
-            variant="outline"
-            className="h-14 rounded-2xl border-blue-500"
-            onPress={() => handleDecision('bought')}
+          <TouchableOpacity
+            onPress={() => handleDecision("bought")}
+            className="h-14 rounded-2xl border-2 border-[#282B4A]/20 flex-row items-center justify-center gap-3 bg-white"
+            activeOpacity={0.8}
           >
-            <ShoppingBag size={20} className="text-foreground mr-2" />
-            <Text className="text-foreground font-bold text-base">I bought it</Text>
-          </Button>
+            <ShoppingBag size={20} color={PALETTE} />
+            <Text className="text-[#282B4A] font-bold text-base">I bought it</Text>
+          </TouchableOpacity>
 
-          <Button
-            className="h-14 rounded-2xl bg-blue-500"
-            onPress={() => handleDecision('forgot')}
+          <TouchableOpacity
+            onPress={() => handleDecision("forgot")}
+            className="h-14 rounded-2xl flex-row items-center justify-center gap-3 bg-[#282B4A]"
+            activeOpacity={0.8}
           >
-            <Ghost size={20} className="text-white mr-2" />
-            <Text className="text-white font-bold text-base">I forgot about it! 🥂</Text>
-          </Button>
+            <Ghost size={20} color={PARCHMENT} />
+            <Text className="text-[#EEEBDA] font-bold text-base">I forgot about it! 🥂</Text>
+          </TouchableOpacity>
 
-          <TouchableOpacity onPress={handleDelete} className="items-center mt-6">
+          <TouchableOpacity onPress={handleDelete} className="items-center mt-6" activeOpacity={0.7}>
             <View className="flex-row items-center gap-2">
-              <Trash2 size={16} className="text-destructive" />
-              <Text className="text-destructive font-bold">Remove Item</Text>
+              <Trash2 size={16} color="#ef4444" />
+              <Text className="text-[#ef4444] font-bold">Remove Item</Text>
             </View>
           </TouchableOpacity>
         </View>
       </View>
 
       {showOutcome && (
-        <OutcomePrompt 
-          item={item} 
+        <OutcomePrompt
+          item={item}
           onDone={() => {
             setShowOutcome(false);
             router.back();
-          }} 
+          }}
         />
       )}
     </ScrollView>

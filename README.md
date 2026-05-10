@@ -112,9 +112,8 @@ Copy `.env.example` to `.env.local` and fill in:
 EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
-# V2 — ML microservice
+# V2 — ML microservice (no secret needed — auth via Supabase JWT)
 EXPO_PUBLIC_ML_URL=http://localhost:8000
-EXPO_PUBLIC_ML_SECRET=dev-secret-change-me
 ```
 
 ---

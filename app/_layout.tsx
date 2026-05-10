@@ -1,5 +1,5 @@
 import '../global.css';
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppState, Alert } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { useShareIntent } from "expo-share-intent";
@@ -27,13 +27,23 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CustomAlert } from '@/components/CustomAlert';
 import { OfflineBanner } from '@/components/OfflineBanner';
 
-const queryClient = new QueryClient();
-
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const { colorScheme } = useColorScheme();
   const router = useRouter();
+  // Stable QueryClient reference — module-level instantiation gets recreated
+  // on every hot reload in development, wiping the cache unexpectedly.
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        // 2 minutes — prevents refetching on every tab switch.
+        // Mutations call invalidateQueries directly so data stays fresh
+        // after writes without relying on background refetches.
+        staleTime: 1000 * 60 * 2,
+      },
+    },
+  }));
   const { hasShareIntent, shareIntent, resetShareIntent, error: shareIntentError } = useShareIntent();
   const lastClipboard = useRef<string | null>(null);
   const [loaded, error] = useFonts({
@@ -61,7 +71,7 @@ export default function RootLayout() {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     requestPermissions();

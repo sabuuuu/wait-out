@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Collection } from "@/lib/types";
+import { nanoid } from "nanoid/non-secure";
 
 export function useCollections() {
   const queryClient = useQueryClient();
@@ -8,13 +9,15 @@ export function useCollections() {
   const { data: collections = [], isLoading } = useQuery({
     queryKey: ["collections"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      // getSession() reads from local storage — no network round-trip.
+      // getUser() makes a network request to validate the JWT every time.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return [];
       
       const { data, error } = await supabase
         .from("collections")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", session.user.id)
         .order("sort_order", { ascending: true });
         
       if (error) throw error;
@@ -38,7 +41,7 @@ export function useCollections() {
 
       const optimisticCol = {
         ...newCol,
-        id: Math.random().toString(36).substring(7),
+        id: nanoid(),
         created_at: new Date().toISOString(),
       } as Collection;
 

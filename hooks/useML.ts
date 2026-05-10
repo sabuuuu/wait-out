@@ -4,17 +4,11 @@ import { WishlistItem } from "@/lib/types";
 
 export function useML() {
   const trainMutation = useMutation({
-    mutationFn: async ({ userId, items }: { userId: string; items: WishlistItem[] }) => {
-      return await triggerModelTraining(userId, items);
+    mutationFn: async ({ items }: { items: WishlistItem[] }) => {
+      return await triggerModelTraining(items);
     },
-    onSuccess: (data) => {
-      if (data.status === "training_triggered") {
-        console.log("🎉 ML Model training triggered successfully with", data.n, "samples");
-      }
-    },
-    onError: (error) => {
-      console.error("Failed to trigger ML training via mutation:", error);
-    },
+    // Training is a background fire-and-forget operation — failures are
+    // silent by design. The V1 score is always the fallback.
   });
 
   return {

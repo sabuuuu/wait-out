@@ -14,7 +14,6 @@ WebBrowser.maybeCompleteAuthSession();
 
 // Colors mapping to match design-ex.md
 const INDIGO = "#282B4A";
-const PARCHMENT = "#EEEBDA";
 
 export default function SignIn() {
   const insets = useSafeAreaInsets();
@@ -33,6 +32,29 @@ export default function SignIn() {
     setLoading(false);
   }
 
+  async function handleForgotPassword() {
+    if (!email) {
+      showAlert("Enter your email", "Type your email address above first.", "info");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: "pausy://reset-password",
+      });
+      if (error) throw error;
+      showAlert(
+        "Check your inbox",
+        `We sent a password reset link to ${email}.`,
+        "success"
+      );
+    } catch (e: any) {
+      showAlert("Error", e?.message ?? "Could not send reset email.", "error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleGoogleSignIn() {
     setLoading(true);
     try {
@@ -43,13 +65,13 @@ export default function SignIn() {
       });
       if (error) throw error;
       if (!data?.url) throw new Error("No auth URL returned");
+
       const res = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+
       if (res.type === "success" && res.url) {
-        const url = new URL(res.url);
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: url.searchParams.get("access_token") ?? "",
-          refresh_token: url.searchParams.get("refresh_token") ?? "",
-        });
+        // Use exchangeCodeForSession — handles PKCE correctly and avoids
+        // reading tokens from URL query params (which get logged by proxies).
+        const { error: sessionError } = await supabase.auth.exchangeCodeForSession(res.url);
         if (sessionError) throw sessionError;
         router.replace("/(tabs)");
       }
@@ -112,7 +134,7 @@ export default function SignIn() {
 
           {/* Forgot Password */}
           <View className="flex-row justify-end mb-4">
-            <TouchableOpacity>
+            <TouchableOpacity onPress={handleForgotPassword} disabled={loading}>
               <Text className="text-[11px] text-[#282B4A]/45 underline font-medium">Forgot password?</Text>
             </TouchableOpacity>
           </View>

@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text } from "@/components/ui/text";
 import { useItems } from "@/hooks/useItems";
 import { useCollections } from "@/hooks/useCollections";
+import { useProfile } from "@/hooks/useProfile";
 import { useRouter } from "expo-router";
 import { Wallet, BrainCircuit, TrendingDown, ShoppingBag, AlertCircle } from "lucide-react-native";
 
@@ -11,6 +12,8 @@ export default function StatsScreen() {
   const insets = useSafeAreaInsets();
   const { items } = useItems();
   const { collections } = useCollections();
+  const { profile } = useProfile();
+  const currency = profile?.currency ?? "DZD";
   const router = useRouter();
 
   // 1. Total Money Not Spent (Forgot Items)
@@ -72,7 +75,7 @@ export default function StatsScreen() {
               <Wallet size={16} color="#EEEBDA" opacity={0.6} />
               <Text className="text-[10px] text-[#EEEBDA]/70 font-bold uppercase tracking-wider">Money Saved</Text>
             </View>
-            <Text className="text-[#EEEBDA] text-2xl font-bold">{savedAmount.toLocaleString()} <Text className="text-sm font-medium opacity-60">DZD</Text></Text>
+            <Text className="text-[#EEEBDA] text-2xl font-bold">{savedAmount.toLocaleString()} <Text className="text-sm font-medium opacity-60">{currency}</Text></Text>
           </View>
 
           <View className="flex-1 bg-white rounded-3xl p-5 border border-[#282B4A]/[0.05] shadow-sm">
@@ -136,11 +139,11 @@ export default function StatsScreen() {
                   className="bg-white rounded-3xl p-4 flex-row items-center border border-[#282B4A]/[0.05] shadow-sm"
                 >
                   <View className="w-10 h-10 rounded-full bg-[#282B4A]/5 items-center justify-center mr-3">
-                    <Text className="text-[10px] font-bold text-[#282B4A]/50">DZD</Text>
+                    <Text className="text-[10px] font-bold text-[#282B4A]/50">{currency}</Text>
                   </View>
                   <View className="flex-1 pr-2">
                     <Text className="font-bold text-[#282B4A] text-sm" numberOfLines={1}>{item.title}</Text>
-                    <Text className="text-[11px] text-[#282B4A]/50 font-medium">{item.price?.toLocaleString()} DZD</Text>
+                    <Text className="text-[11px] text-[#282B4A]/50 font-medium">{item.price?.toLocaleString()} {currency}</Text>
                   </View>
                   <View className={`px-2.5 py-1 rounded-full flex-row items-center gap-1 ${item.regret_score > 50 ? 'bg-[#ef4444]/10' : 'bg-[#f59e0b]/10'}`}>
                     <AlertCircle size={10} color={item.regret_score > 50 ? "#ef4444" : "#f59e0b"} />

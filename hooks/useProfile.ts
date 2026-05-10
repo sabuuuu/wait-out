@@ -16,28 +16,29 @@ export function useProfile() {
   const { data: profile, isLoading: isProfileLoading } = useQuery({
     queryKey: ["profile"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
+      // getSession() reads from local storage — no network round-trip.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return null;
 
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", user.id)
+        .eq("id", session.user.id)
         .single();
 
       if (error) {
-        // If profile doesn't exist, create it
+        // Profile doesn't exist yet — create it on first sign-in
         if (error.code === "PGRST116") {
           const { data: newProfile, error: createError } = await supabase
             .from("profiles")
-            .insert({ 
-              id: user.id, 
-              display_name: user.user_metadata?.full_name || "Wait Out User",
-              currency: "DZD"
+            .insert({
+              id: session.user.id,
+              display_name: session.user.user_metadata?.full_name || "Pausy User",
+              currency: "DZD",
             })
             .select()
             .single();
-          
+
           if (createError) throw createError;
           return newProfile as Profile;
         }
@@ -50,20 +51,20 @@ export function useProfile() {
   const { data: prefs, isLoading: isPrefsLoading } = useQuery({
     queryKey: ["notification_prefs"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return null;
 
       const { data, error } = await supabase
         .from("notification_prefs")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", session.user.id)
         .single();
 
       if (error) {
         if (error.code === "PGRST116") {
           const { data: newPrefs, error: createError } = await supabase
             .from("notification_prefs")
-            .insert({ user_id: user.id })
+            .insert({ user_id: session.user.id })
             .select()
             .single();
           if (createError) throw createError;
@@ -77,13 +78,13 @@ export function useProfile() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (updated: Partial<Profile>) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
 
       const { data, error } = await supabase
         .from("profiles")
         .update(updated)
-        .eq("id", user.id)
+        .eq("id", session.user.id)
         .select()
         .single();
 
@@ -95,13 +96,13 @@ export function useProfile() {
 
   const updatePrefsMutation = useMutation({
     mutationFn: async (updated: Partial<NotificationPrefs>) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
 
       const { data, error } = await supabase
         .from("notification_prefs")
         .update(updated)
-        .eq("user_id", user.id)
+        .eq("user_id", session.user.id)
         .select()
         .single();
 

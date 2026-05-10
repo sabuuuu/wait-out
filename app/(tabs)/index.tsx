@@ -9,7 +9,6 @@ import { ArrowRight, Timer, PlusCircle, ShieldAlert, Sparkles } from "lucide-rea
 import { useRouter } from "expo-router";
 import { useItems } from "@/hooks/useItems";
 import { useProfile } from "@/hooks/useProfile";
-import { supabase } from "@/lib/supabase";
 
 const WISDOM = [
   "Sleep on it. If you still want it in 3 days, it might be meant for you.",
@@ -23,6 +22,7 @@ export default function Dashboard() {
   const insets = useSafeAreaInsets();
   const { items } = useItems();
   const { profile } = useProfile();
+  const currency = profile?.currency ?? "DZD";
   const router = useRouter();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
@@ -87,7 +87,7 @@ export default function Dashboard() {
             <Sparkles size={16} color="#EEEBDA" opacity={0.5} />
           </View>
           <Text className="text-[#EEEBDA] text-4xl font-bold tracking-tight">
-            {totalWaitingAmount.toLocaleString()} <Text className="text-2xl text-[#EEEBDA]/60 font-medium">DZD</Text>
+            {totalWaitingAmount.toLocaleString()} <Text className="text-2xl text-[#EEEBDA]/60 font-medium">{currency}</Text>
           </Text>
         </View>
       </View>
@@ -203,7 +203,7 @@ export default function Dashboard() {
           </Text>
           <Text className="text-[#282B4A]/60 text-[14px] font-medium leading-6 text-center px-4 mb-6">
             If you walked away from these today, you'd keep{" "}
-            <Text className="text-[#282B4A] font-bold">{totalWaitingAmount.toLocaleString()} DZD</Text>.
+            <Text className="text-[#282B4A] font-bold">{totalWaitingAmount.toLocaleString()} {currency}</Text>.
           </Text>
 
           <TouchableOpacity

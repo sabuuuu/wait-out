@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, Switch, ScrollView, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router, Stack } from "expo-router";
 import { useCollections } from "@/hooks/useCollections";
+import { useAppStore } from "@/lib/store";
 import { scheduleDigest } from "@/lib/notifications";
 import { NotifFrequency } from "@/lib/types";
 import { Text } from "@/components/ui/text";
@@ -21,6 +22,7 @@ export default function CollectionSettingsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const { collections, updateCollection } = useCollections();
+  const { showAlert } = useAppStore();
   const col = collections.find((c) => c.id === id);
   
   const [enabled, setEnabled] = useState(col?.notif_enabled ?? true);
@@ -42,8 +44,8 @@ export default function CollectionSettingsScreen() {
         await scheduleDigest(updated);
       }
       router.back();
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      showAlert("Error", e?.message ?? "Could not save preferences.", "error");
     } finally {
       setSaving(false);
     }

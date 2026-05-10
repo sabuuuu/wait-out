@@ -1,6 +1,7 @@
 export type DelayType = "3d" | "7d" | "2w" | "payday" | "custom";
 export type ItemStatus = "waiting" | "bought" | "forgot" | "snoozed";
 export type NotifFrequency = "on_schedule" | "daily_digest" | "weekly_digest" | "never";
+export type OutcomeType = "regretted" | "happy" | "neutral";
 
 export interface Collection {
   id: string;
@@ -14,6 +15,12 @@ export interface Collection {
   notif_time?: string;   // "HH:MM"
   notif_weekday?: number;   // 0–6
   created_at: string;
+}
+
+/** Top-factor entry returned by the ML microservice. */
+export interface MLTopFactor {
+  feature: string;
+  contribution: number;
 }
 
 export interface WishlistItem {
@@ -43,9 +50,10 @@ export interface WishlistItem {
   remind_at: string;
   status: ItemStatus;
 
-  // Score
+  // Score — V1 stores ScoreFactors, V2 stores MLTopFactor[].
+  // Use Array.isArray(score_factors) to distinguish at runtime.
   regret_score: number;
-  score_factors?: ScoreFactors | any;
+  score_factors?: ScoreFactors | MLTopFactor[] | null;
 
   notif_id?: string;
   updated_at: string;
@@ -58,7 +66,7 @@ export interface WishlistItem {
   source_platform?: "tiktok" | "instagram" | "web" | "unknown";
 
   // V2: outcome label
-  outcome?: "regretted" | "happy" | "neutral" | null;
+  outcome?: OutcomeType | null;
   outcome_set_at?: string | null;
 }
 

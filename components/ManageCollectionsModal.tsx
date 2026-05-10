@@ -4,7 +4,8 @@ import { useRouter } from "expo-router";
 import { Text } from "./ui/text";
 import { Button } from "./ui/button";
 import { useCollections } from "@/hooks/useCollections";
-import { X, Plus, Trash2, Edit2, Check, Smile, Settings } from "lucide-react-native";
+import { useAppStore } from "@/lib/store";
+import { X, Plus, Trash2, Edit2, Check, Settings } from "lucide-react-native";
 import { Collection } from "@/lib/types";
 import { supabase } from "@/lib/supabase";
 
@@ -15,6 +16,7 @@ interface Props {
 
 export function ManageCollectionsModal({ visible, onClose }: Props) {
   const { collections, addCollection, updateCollection, deleteCollection } = useCollections();
+  const { showAlert } = useAppStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [emoji, setEmoji] = useState("");
@@ -23,12 +25,12 @@ export function ManageCollectionsModal({ visible, onClose }: Props) {
 
   const handleAdd = async () => {
     if (!name || !emoji) return;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
 
     try {
       await addCollection({
-        user_id: user.id,
+        user_id: session.user.id,
         name,
         emoji,
         sort_order: collections.length,
@@ -38,8 +40,8 @@ export function ManageCollectionsModal({ visible, onClose }: Props) {
       setName("");
       setEmoji("");
       setIsAdding(false);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      showAlert("Error", e?.message ?? "Could not create collection.", "error");
     }
   };
 
@@ -50,8 +52,8 @@ export function ManageCollectionsModal({ visible, onClose }: Props) {
       setEditingId(null);
       setName("");
       setEmoji("");
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      showAlert("Error", e?.message ?? "Could not update collection.", "error");
     }
   };
 
@@ -126,7 +128,7 @@ export function ManageCollectionsModal({ visible, onClose }: Props) {
                       <TouchableOpacity 
                         onPress={() => { 
                           onClose(); 
-                          router.push(`/collection/${col.id}` as any); 
+                          router.push({ pathname: "/collection/[id]", params: { id: col.id } });
                         }} 
                         className="p-2"
                       >

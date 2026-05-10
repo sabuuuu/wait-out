@@ -32,9 +32,9 @@ export function extractFeatures(item: WishlistItem, history: WishlistItem[]): ML
     : price;
   const price_vs_cat_avg = catAvgPrice > 0 ? price / catAvgPrice : 1;
 
-  const catResolved       = catItems.filter((h) => h.outcome);
+  const catResolved       = catItems.filter((h) => h.outcome === "regretted" || h.outcome === "happy");
   const ignored_ratio_cat = catResolved.length
-    ? catResolved.filter((h) => h.outcome !== "happy").length / catResolved.length
+    ? catResolved.filter((h) => h.outcome === "regretted").length / catResolved.length
     : 0.5;
 
   const dayOfWeek = item.added_day_of_week ?? new Date().getDay();

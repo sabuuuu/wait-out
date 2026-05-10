@@ -1,33 +1,31 @@
 import React, { useState } from "react";
 import { View, TouchableOpacity, Modal } from "react-native";
 import { Text } from "./ui/text";
-import { Card } from "./ui/card";
 import { WishlistItem } from "@/lib/types";
-import { supabase } from "@/lib/supabase";
 import { useItems } from "@/hooks/useItems";
 import { useML } from "@/hooks/useML";
+import { useAppStore } from "@/lib/store";
 import * as Haptics from "expo-haptics";
 import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from "react-native-reanimated";
 
 export function OutcomePrompt({ item, onDone }: { item: WishlistItem; onDone: () => void }) {
   const [saving, setSaving] = useState(false);
-  const { items } = useItems();
+  const { items, updateOutcome } = useItems();
   const { triggerTraining } = useML();
+  const { showAlert } = useAppStore();
 
   async function record(outcome: "regretted" | "happy" | "neutral") {
     setSaving(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
-      await supabase
-        .from("items")
-        .update({ outcome, outcome_set_at: new Date().toISOString() })
-        .eq("id", item.id);
+      await updateOutcome({ id: item.id, outcome });
 
-      // Trigger training natively via TanStack Query
-      const updatedItems = items.map(i => i.id === item.id ? { ...i, outcome } : i) as WishlistItem[];
-      triggerTraining({ userId: item.user_id, items: updatedItems });
-    } catch (e) {
-      console.error(e);
+      const updatedItems = items.map(i =>
+        i.id === item.id ? { ...i, outcome } : i
+      ) as WishlistItem[];
+      triggerTraining({ items: updatedItems });
+    } catch (e: any) {
+      showAlert("Error", e?.message ?? "Could not save your rating.", "error");
     } finally {
       setSaving(false);
       onDone();
@@ -36,13 +34,13 @@ export function OutcomePrompt({ item, onDone }: { item: WishlistItem; onDone: ()
 
   return (
     <Modal transparent animationType="none" visible={true} onRequestClose={onDone}>
-      <Animated.View 
-        entering={FadeIn} 
+      <Animated.View
+        entering={FadeIn}
         exiting={FadeOut}
         className="flex-1 bg-black/40 justify-end"
       >
-        <Animated.View 
-          entering={SlideInDown.springify()} 
+        <Animated.View
+          entering={SlideInDown.springify()}
           exiting={SlideOutDown}
           className="bg-[#EEEBDA] rounded-t-[40px] p-8 pb-12 shadow-2xl"
         >
@@ -84,7 +82,7 @@ export function OutcomePrompt({ item, onDone }: { item: WishlistItem; onDone: ()
               <Text className="text-[#282B4A] font-bold text-xs uppercase tracking-wider text-center">Happy</Text>
             </TouchableOpacity>
           </View>
-          
+
           <TouchableOpacity onPress={onDone} className="mt-8 items-center" disabled={saving}>
             <Text className="text-[#282B4A]/40 font-bold uppercase text-xs tracking-widest">Skip for now</Text>
           </TouchableOpacity>

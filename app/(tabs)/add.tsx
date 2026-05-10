@@ -7,11 +7,14 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { useItems } from "@/hooks/useItems";
 import { useCollections } from "@/hooks/useCollections";
+import { useProfile } from "@/hooks/useProfile";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { DelayType, WishlistItem } from "@/lib/types";
 import { DelayPicker } from "@/components/DelayPicker";
 import { CollectionPickerModal } from "@/components/CollectionPickerModal";
-import { Camera, Sparkles, ChevronDown, Link2, Instagram, Video } from "lucide-react-native";
+import { SourceLinkInput } from "@/components/SourceLinkInput";
+import { Sparkles, ChevronDown } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { computeRegretScore } from "@/lib/regret-score";
 import { scheduleReminder } from "@/lib/notifications";
@@ -33,19 +36,35 @@ export default function AddItem() {
   const { showAlert } = useAppStore();
   const { items, addItem, isAdding } = useItems();
   const { collections } = useCollections();
+  const { profile, prefs } = useProfile();
+  const currency = profile?.currency ?? "DZD";
   const router = useRouter();
+  // Need queryClient to invalidate the items cache after the background ML update
+  const queryClient = useQueryClient();
 
   const calculateRemindAt = (type: DelayType): string => {
     const now = new Date();
     switch (type) {
-      case "3d": return new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString();
-      case "7d": return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
-      case "2w": return new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      case "3d":    return new Date(now.getTime() + 3  * 24 * 60 * 60 * 1000).toISOString();
+      case "7d":    return new Date(now.getTime() + 7  * 24 * 60 * 60 * 1000).toISOString();
+      case "2w":    return new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
       case "payday": {
-        const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        // Use the user's configured payday day, falling back to the 1st
+        const paydayDay = profile?.payday_day ?? 1;
+        const now2 = new Date();
+        // If payday this month hasn't passed yet, use it; otherwise next month
+        const thisMonth = new Date(now2.getFullYear(), now2.getMonth(), paydayDay);
+        const next = thisMonth > now2
+          ? thisMonth
+          : new Date(now2.getFullYear(), now2.getMonth() + 1, paydayDay);
         return next.toISOString();
       }
-      default: return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      // "custom" is not yet implemented — falls back to 7d.
+      // This case is unreachable from the UI since DelayPicker doesn't
+      // render the Custom option, but the type union still includes it.
+      case "custom":
+      default:
+        return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
     }
   };
 
@@ -55,9 +74,9 @@ export default function AddItem() {
       return;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
 
-    if (!user) {
+    if (!session) {
       showAlert("Error", "You must be signed in to save items.", "error");
       return;
     }
@@ -65,14 +84,24 @@ export default function AddItem() {
     const priceNum = parseFloat(price.replace(",", ".")) || 0;
     const remindAt = calculateRemindAt(delay);
     const addedHour = new Date().getHours();
+    const addedDayOfWeek = new Date().getDay();
     const category = collections.find(c => c.id === collectionId);
 
+    const detectPlatform = (url: string): "tiktok" | "instagram" | "web" | "unknown" => {
+      if (!url) return "unknown";
+      if (url.includes("tiktok")) return "tiktok";
+      if (url.includes("instagram")) return "instagram";
+      return "web";
+    };
+    const sourcePlatform = detectPlatform(tiktokUrl || instagramUrl || sourceUrl);
+    const categorySlug = category?.name?.toLowerCase() || "other";
+
+    // ── V1 score (synchronous, always available) ──────────────────────────
     const collectionItems = items.filter(i => i.collection_id === collectionId);
     const avgSpend = collectionItems.length > 0
       ? collectionItems.reduce((acc, curr) => acc + (curr.price || 0), 0) / collectionItems.length
       : priceNum;
-
-    const historyIgnored = collectionItems.filter(i => i.status === 'forgot').length;
+    const historyIgnored = collectionItems.filter(i => i.status === "forgot").length;
 
     const { score: v1Score, factors: v1Factors } = computeRegretScore(
       { price: priceNum, added_hour: addedHour, collection_id: collectionId },
@@ -81,61 +110,78 @@ export default function AddItem() {
       category?.name
     );
 
-    const detectPlatform = (url: string): "tiktok" | "instagram" | "web" | "unknown" => {
-      if (!url) return "unknown";
-      if (url.includes("tiktok")) return "tiktok";
-      if (url.includes("instagram")) return "instagram";
-      return "web";
-    };
-
-    const mlItem: any = {
-      user_id: user.id,
-      added_hour: addedHour,
-      price: priceNum,
-      category_slug: category?.name?.toLowerCase() || "other",
-      source_platform: detectPlatform(tiktokUrl || instagramUrl || sourceUrl),
-      added_day_of_week: new Date().getDay(),
-      session_items_count: 1,
-    };
-
-    const mlResult = await getMLRegretScore(mlItem, items);
-
-    const score = mlResult.probability !== null 
-      ? Math.round(mlResult.probability * 100) 
-      : v1Score;
-
-    const factors = mlResult.probability !== null 
-      ? mlResult.topFactors 
-      : v1Factors;
-
     try {
+      // ── Save immediately with V1 score ────────────────────────────────
+      // The ML call is fired in the background after saving so the user
+      // gets instant feedback. If ML returns a result, we update the item.
       const newItemData: Omit<WishlistItem, "id" | "updated_at"> = {
-        user_id: user.id,
+        user_id: session.user.id,
         collection_id: collectionId,
         title,
         notes: notes || undefined,
         price: priceNum,
-        currency: "DZD",
+        currency,
         source_url: sourceUrl || undefined,
         tiktok_url: tiktokUrl || undefined,
         instagram_url: instagramUrl || undefined,
         added_at: new Date().toISOString(),
         added_hour: addedHour,
+        added_day_of_week: addedDayOfWeek,
+        source_platform: sourcePlatform,
+        category_slug: categorySlug,
+        session_items_count: 1,
         delay_type: delay,
         remind_at: remindAt,
         status: "waiting",
-        regret_score: score,
-        score_factors: factors,
+        regret_score: v1Score,
+        score_factors: v1Factors,
       };
 
       const savedItem = await addItem(newItemData);
 
       if (savedItem) {
-        await scheduleReminder(savedItem, null, category);
+        // Pass the user's notification prefs so quiet hours are enforced.
+        // Previously null was passed here, meaning quiet hours were never checked.
+        await scheduleReminder(savedItem, prefs ?? null, category);
       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace("/(tabs)/items");
+
+      // ── ML score (async, non-blocking) ────────────────────────────────
+      // Pre-filter history to the same category to avoid passing the full
+      // items array into extractFeatures unnecessarily.
+      if (savedItem) {
+        const categoryHistory = items.filter(i => i.category_slug === categorySlug);
+        const mlItem: WishlistItem = {
+          ...savedItem,
+          added_hour: addedHour,
+          added_day_of_week: addedDayOfWeek,
+          source_platform: sourcePlatform,
+          category_slug: categorySlug,
+          session_items_count: 1,
+        };
+
+        getMLRegretScore(mlItem, categoryHistory).then(async (mlResult) => {
+          if (mlResult.probability !== null) {
+            const mlScore = Math.round(mlResult.probability * 100);
+            // Silently update the saved item with the ML score in the background,
+            // then invalidate the cache so the item detail screen shows the new score.
+            await supabase
+              .from("items")
+              .update({
+                regret_score: mlScore,
+                score_factors: mlResult.topFactors,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", savedItem.id);
+
+            queryClient.invalidateQueries({ queryKey: ["items"] });
+          }
+        }).catch(() => {
+          // ML update failing silently is fine — V1 score is already saved
+        });
+      }
     } catch (e: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       showAlert("Error", e.message, "error");
@@ -163,27 +209,17 @@ export default function AddItem() {
 
         <View className="px-6 gap-7">
 
-          {/* Photo & Title Row */}
-          <View className="flex-row gap-4 items-end">
-            <TouchableOpacity
-              className="w-20 h-20 bg-white rounded-2xl items-center justify-center border border-[#282B4A]/[0.05] shadow-sm"
-              activeOpacity={0.7}
-            >
-              <Camera size={22} color="rgba(40,43,74,0.4)" />
-              <Text className="text-[#282B4A]/40 text-[9px] font-outfit-bold uppercase tracking-wider mt-1.5">Photo</Text>
-            </TouchableOpacity>
-
-            <View className="flex-1 gap-2">
-              <Label nativeID="title-label" className="text-[10px] text-[#282B4A]/50 uppercase font-outfit-bold tracking-widest ml-1">What is it?</Label>
-              <Input
-                placeholder="Pink Mechanical Keyboard..."
-                placeholderTextColor="rgba(40,43,74,0.3)"
-                value={title}
-                onChangeText={setTitle}
-                className="bg-white border-[#282B4A]/[0.05] h-14 rounded-2xl px-4 text-[15px] font-outfit-medium text-[#282B4A] shadow-sm"
-                aria-labelledby="title-label"
-              />
-            </View>
+          {/* Title Row — photo upload not yet implemented */}
+          <View className="flex-1 gap-2">
+            <Label nativeID="title-label" className="text-[10px] text-[#282B4A]/50 uppercase font-outfit-bold tracking-widest ml-1">What is it?</Label>
+            <Input
+              placeholder="Pink Mechanical Keyboard..."
+              placeholderTextColor="rgba(40,43,74,0.3)"
+              value={title}
+              onChangeText={setTitle}
+              className="bg-white border-[#282B4A]/[0.05] h-14 rounded-2xl px-4 text-[15px] font-outfit-medium text-[#282B4A] shadow-sm"
+              aria-labelledby="title-label"
+            />
           </View>
 
           {/* Price & Category Row */}
@@ -201,7 +237,7 @@ export default function AddItem() {
                   className="flex-1 h-full text-[16px] font-outfit-bold text-[#282B4A] border-none bg-transparent shadow-none px-0"
                   aria-labelledby="price-label"
                 />
-                <Text className="font-outfit-bold text-[#282B4A]/40 text-[13px] ml-2">DZD</Text>
+                <Text className="font-outfit-bold text-[#282B4A]/40 text-[13px] ml-2">{currency}</Text>
               </View>
             </View>
 
@@ -233,54 +269,15 @@ export default function AddItem() {
             <DelayPicker selected={delay} onChange={setDelay} />
           </View>
 
-          {/* Unified Links Card */}
-          <View className="gap-2">
-            <Label className="text-[10px] text-[#282B4A]/50 uppercase font-outfit-bold tracking-widest ml-1">Where did you find it?</Label>
-            <View className="bg-white rounded-[20px] border border-[#282B4A]/[0.05] shadow-sm overflow-hidden">
-
-              {/* Web Link */}
-              <View className="flex-row items-center px-4 h-14 border-b border-[#282B4A]/[0.04]">
-                <Link2 size={18} color="rgba(40,43,74,0.4)" />
-                <Input
-                  placeholder="Website Link..."
-                  placeholderTextColor="rgba(40,43,74,0.3)"
-                  value={sourceUrl}
-                  onChangeText={setSourceUrl}
-                  autoCapitalize="none"
-                  keyboardType="url"
-                  className="flex-1 h-full ml-3 text-[14px] text-[#282B4A] border-none bg-transparent shadow-none px-0 font-outfit"
-                />
-              </View>
-
-              {/* Instagram */}
-              <View className="flex-row items-center px-4 h-14 border-b border-[#282B4A]/[0.04]">
-                <Instagram size={18} color="rgba(40,43,74,0.4)" />
-                <Input
-                  placeholder="Instagram Post..."
-                  placeholderTextColor="rgba(40,43,74,0.3)"
-                  value={instagramUrl}
-                  onChangeText={setInstagramUrl}
-                  autoCapitalize="none"
-                  keyboardType="url"
-                  className="flex-1 h-full ml-3 text-[14px] text-[#282B4A] border-none bg-transparent shadow-none px-0 font-outfit"
-                />
-              </View>
-
-              {/* TikTok */}
-              <View className="flex-row items-center px-4 h-14">
-                <Video size={18} color="rgba(40,43,74,0.4)" />
-                <Input
-                  placeholder="TikTok Video..."
-                  placeholderTextColor="rgba(40,43,74,0.3)"
-                  value={tiktokUrl}
-                  onChangeText={setTiktokUrl}
-                  autoCapitalize="none"
-                  keyboardType="url"
-                  className="flex-1 h-full ml-3 text-[14px] text-[#282B4A] border-none bg-transparent shadow-none px-0 font-outfit"
-                />
-              </View>
-            </View>
-          </View>
+          {/* Source Links */}
+          <SourceLinkInput
+            sourceUrl={sourceUrl}
+            onChangeSource={setSourceUrl}
+            tiktokUrl={tiktokUrl}
+            onChangeTiktok={setTiktokUrl}
+            instagramUrl={instagramUrl}
+            onChangeInstagram={setInstagramUrl}
+          />
 
           {/* Notes */}
           <View className="gap-2 mt-2">

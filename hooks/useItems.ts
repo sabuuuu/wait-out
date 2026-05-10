@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { WishlistItem } from "@/lib/types";
+import { nanoid } from "nanoid/non-secure";
 
 export function useItems() {
   const queryClient = useQueryClient();
@@ -9,13 +10,13 @@ export function useItems() {
   const { data: items = [], isLoading, error } = useQuery({
     queryKey: ["items"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return [];
 
       const { data, error } = await supabase
         .from("items")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", session.user.id)
         .order("added_at", { ascending: false });
 
       if (error) throw error;
@@ -38,9 +39,12 @@ export function useItems() {
       await queryClient.cancelQueries({ queryKey: ["items"] });
       const previousItems = queryClient.getQueryData<WishlistItem[]>(["items"]);
 
+      // Use nanoid for a collision-safe temporary ID.
+      // Math.random() IDs caused "Item not found" if the user navigated
+      // to the item detail screen during the optimistic window.
       const optimisticItem = {
         ...newItem,
-        id: Math.random().toString(36).substring(7),
+        id: nanoid(),
         updated_at: new Date().toISOString(),
       } as WishlistItem;
 
@@ -48,7 +52,7 @@ export function useItems() {
 
       return { previousItems };
     },
-    onError: (err, newItem, context) => {
+    onError: (_err, _newItem, context) => {
       if (context?.previousItems) {
         queryClient.setQueryData(["items"], context.previousItems);
       }
@@ -80,7 +84,53 @@ export function useItems() {
 
       return { previousItems };
     },
-    onError: (err, variables, context) => {
+    onError: (_err, _variables, context) => {
+      if (context?.previousItems) {
+        queryClient.setQueryData(["items"], context.previousItems);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+    },
+  });
+
+  // Separate mutation for recording an outcome so OutcomePrompt doesn't
+  // write to Supabase directly and bypass the React Query cache.
+  const updateOutcomeMutation = useMutation({
+    mutationFn: async ({
+      id,
+      outcome,
+    }: {
+      id: string;
+      outcome: "regretted" | "happy" | "neutral";
+    }) => {
+      const { data, error } = await supabase
+        .from("items")
+        .update({ outcome, outcome_set_at: new Date().toISOString() })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as WishlistItem;
+    },
+    onMutate: async ({ id, outcome }) => {
+      await queryClient.cancelQueries({ queryKey: ["items"] });
+      const previousItems = queryClient.getQueryData<WishlistItem[]>(["items"]);
+
+      // Optimistically update the cache so labeledCount in MLScoreCard
+      // reflects the new outcome immediately without waiting for a refetch.
+      queryClient.setQueryData<WishlistItem[]>(["items"], (old) =>
+        old?.map(item =>
+          item.id === id
+            ? { ...item, outcome, outcome_set_at: new Date().toISOString() }
+            : item
+        )
+      );
+
+      return { previousItems };
+    },
+    onError: (_err, _variables, context) => {
       if (context?.previousItems) {
         queryClient.setQueryData(["items"], context.previousItems);
       }
@@ -106,7 +156,7 @@ export function useItems() {
 
       return { previousItems };
     },
-    onError: (err, id, context) => {
+    onError: (_err, _id, context) => {
       if (context?.previousItems) {
         queryClient.setQueryData(["items"], context.previousItems);
       }
@@ -122,6 +172,7 @@ export function useItems() {
     error,
     addItem: addItemMutation.mutateAsync,
     updateItem: updateItemMutation.mutateAsync,
+    updateOutcome: updateOutcomeMutation.mutateAsync,
     deleteItem: deleteItemMutation.mutateAsync,
     isAdding: addItemMutation.isPending,
   };

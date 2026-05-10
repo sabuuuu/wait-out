@@ -13,6 +13,7 @@ export const profiles = pgTable("profiles", {
   currency: text("currency").notNull().default("€"),
   paydayDay: integer("payday_day"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  lastModelTrainedAt: timestamp("last_model_trained_at", { withTimezone: true }),
 });
 
 export const collections = pgTable("collections", {
