@@ -8,6 +8,7 @@ import { useAppStore } from "@/lib/store";
 import { X, Plus, Trash2, Edit2, Check, Settings } from "lucide-react-native";
 import { Collection } from "@/lib/types";
 import { supabase } from "@/lib/supabase";
+import { getCategoryIcon } from "@/lib/utils";
 
 interface Props {
   visible: boolean;
@@ -24,7 +25,7 @@ export function ManageCollectionsModal({ visible, onClose }: Props) {
   const router = useRouter();
 
   const handleAdd = async () => {
-    if (!name || !emoji) return;
+    if (!name) return;
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
@@ -32,7 +33,7 @@ export function ManageCollectionsModal({ visible, onClose }: Props) {
       await addCollection({
         user_id: session.user.id,
         name,
-        emoji,
+        emoji: "🏷️", // Default emoji since we use icons now
         sort_order: collections.length,
         notif_enabled: true,
         notif_frequency: "on_schedule",
@@ -46,9 +47,9 @@ export function ManageCollectionsModal({ visible, onClose }: Props) {
   };
 
   const handleUpdate = async (id: string) => {
-    if (!name || !emoji) return;
+    if (!name) return;
     try {
-      await updateCollection({ id, name, emoji });
+      await updateCollection({ id, name, emoji: "🏷️" });
       setEditingId(null);
       setName("");
       setEmoji("");
@@ -120,7 +121,10 @@ export function ManageCollectionsModal({ visible, onClose }: Props) {
                   <>
                     <View className="flex-row items-center gap-3">
                       <View className="w-10 h-10 bg-[#282B4A]/5 rounded-xl items-center justify-center">
-                        <Text className="text-lg">{col.emoji}</Text>
+                        {(() => {
+                          const Icon = getCategoryIcon(col.name);
+                          return <Icon size={20} color="#282B4A" opacity={0.6} />;
+                        })()}
                       </View>
                       <Text className="font-bold text-[#282B4A]">{col.name}</Text>
                     </View>
@@ -149,13 +153,6 @@ export function ManageCollectionsModal({ visible, onClose }: Props) {
             {isAdding ? (
               <View className="bg-white rounded-3xl p-4 border-2 border-dashed border-[#282B4A]/20">
                 <View className="flex-row gap-2 items-center">
-                  <TextInput
-                    placeholder="🏷️"
-                    value={emoji}
-                    onChangeText={setEmoji}
-                    className="w-12 h-12 bg-[#282B4A]/5 rounded-xl text-center text-xl"
-                    maxLength={2}
-                  />
                   <TextInput
                     placeholder="New Collection Name"
                     value={name}

@@ -13,6 +13,7 @@ import { useRouter } from "expo-router";
 import { useItems } from "@/hooks/useItems";
 import { useCollections } from "@/hooks/useCollections";
 import { ManageCollectionsModal } from "@/components/ManageCollectionsModal";
+import { getCategoryIcon } from "@/lib/utils";
 
 const STATUS_FILTERS: { label: string; value: ItemStatus | "all" }[] = [
   { label: "Waiting", value: "waiting" },
@@ -47,7 +48,7 @@ export default function Items() {
           <Text className="text-4xl font-fancy text-[#282B4A]">Waiting Room</Text>
           <Text className="text-[13px] text-[#282B4A]/40 font-medium mt-2">Manage your intentional purchases.</Text>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={() => setIsManageModalVisible(true)}
           className="p-3 bg-white rounded-2xl border border-[#282B4A]/5 shadow-sm"
         >
@@ -62,21 +63,16 @@ export default function Items() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 24 }}
         >
-          <TouchableOpacity
-            onPress={() => setActiveCollection(null)}
-            className={`px-4 py-2 rounded-full mr-2 ${!activeCollectionId ? 'bg-[#282B4A]' : 'bg-[#282B4A]/5'}`}
-          >
-            <Text className={`font-outfit-bold text-xs uppercase tracking-widest ${!activeCollectionId ? 'text-[#EEEBDA]' : 'text-[#282B4A]/50'}`}>
-              All
-            </Text>
-          </TouchableOpacity>
           {collections.map((col) => (
             <TouchableOpacity
               key={col.id}
               onPress={() => setActiveCollection(col.id)}
-              className={`px-4 py-2 rounded-full mr-2 flex-row items-center ${activeCollectionId === col.id ? 'bg-[#282B4A]' : 'bg-[#282B4A]/5'}`}
+              className={`px-4 py-2 rounded-full space-x-2 mr-2 flex-row items-center ${activeCollectionId === col.id ? 'bg-[#282B4A]' : 'bg-[#282B4A]/5'}`}
             >
-              <Text className="mr-2 text-base">{col.emoji}</Text>
+              {(() => {
+                const Icon = getCategoryIcon(col.name);
+                return <Icon size={12} color={activeCollectionId === col.id ? "#EEEBDA" : "rgba(40,43,74,0.4)"} className="mr-2" />;
+              })()}
               <Text className={`font-outfit-bold text-xs uppercase tracking-widest ${activeCollectionId === col.id ? 'text-[#EEEBDA]' : 'text-[#282B4A]/50'}`}>
                 {col.name}
               </Text>
@@ -105,17 +101,17 @@ export default function Items() {
         </View>
       </View>
 
-      <ManageCollectionsModal 
-        visible={isManageModalVisible} 
-        onClose={() => setIsManageModalVisible(false)} 
+      <ManageCollectionsModal
+        visible={isManageModalVisible}
+        onClose={() => setIsManageModalVisible(false)}
       />
 
       <FlatList
         data={filteredItems}
         keyExtractor={(item) => item.id}
         refreshControl={
-          <RefreshControl 
-            refreshing={isLoading} 
+          <RefreshControl
+            refreshing={isLoading}
             onRefresh={() => queryClient.invalidateQueries({ queryKey: ["items"] })}
             tintColor="#F2C4CE"
           />
@@ -148,27 +144,27 @@ export default function Items() {
             >
               <View className="bg-white rounded-[32px] p-4 flex-row items-center border border-[#282B4A]/[0.03] shadow-sm">
                 <View className="w-20 h-20 bg-[#282B4A]/[0.04] rounded-2xl items-center justify-center mr-4">
-                {item.status === 'waiting' && <Timer size={24} color="rgba(40,43,74,0.6)" />}
-                {item.status === 'bought' && <ShoppingBag size={24} color="#10b981" />}
-                {item.status === 'forgot' && <Ghost size={24} color="rgba(40,43,74,0.3)" />}
-              </View>
-              <View className="flex-1 justify-center">
-                <View>
-                  <Text numberOfLines={1} className="text-[#282B4A] font-bold text-base">{item.title}</Text>
-                  <Text className="text-[#282B4A]/40 text-[10px] uppercase font-bold tracking-wider mt-1">
-                    {item.delay_type} • {new Date(item.added_at).toLocaleDateString()}
-                  </Text>
+                  {item.status === 'waiting' && <Timer size={24} color="rgba(40,43,74,0.6)" />}
+                  {item.status === 'bought' && <ShoppingBag size={24} color="#10b981" />}
+                  {item.status === 'forgot' && <Ghost size={24} color="rgba(40,43,74,0.3)" />}
                 </View>
-                <View className="flex-row justify-between items-center mt-2">
-                  <Text className="text-[#282B4A] font-bold text-lg">
-                    {item.price?.toLocaleString()} <Text className="text-xs text-[#282B4A]/50">{item.currency}</Text>
-                  </Text>
-                  <ChevronRight size={18} color="rgba(40,43,74,0.3)" />
+                <View className="flex-1 justify-center">
+                  <View>
+                    <Text numberOfLines={1} className="text-[#282B4A] font-bold text-base">{item.title}</Text>
+                    <Text className="text-[#282B4A]/40 text-[10px] uppercase font-bold tracking-wider mt-1">
+                      {item.delay_type} • {new Date(item.added_at).toLocaleDateString()}
+                    </Text>
+                  </View>
+                  <View className="flex-row justify-between items-center mt-2">
+                    <Text className="text-[#282B4A] font-bold text-lg">
+                      {item.price?.toLocaleString()} <Text className="text-xs text-[#282B4A]/50">{item.currency}</Text>
+                    </Text>
+                    <ChevronRight size={18} color="rgba(40,43,74,0.3)" />
+                  </View>
                 </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        </Animated.View>
+            </TouchableOpacity>
+          </Animated.View>
         )}
       />
     </View>

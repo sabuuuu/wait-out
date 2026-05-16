@@ -110,54 +110,50 @@ export default function ItemDetail() {
     <ScrollView className="flex-1 bg-[#EEEBDA]">
       <Stack.Screen
         options={{
-          title: "Item Details",
+          headerTitle: "",
           headerStyle: { backgroundColor: PARCHMENT },
-          headerTitleStyle: { fontFamily: "Outfit_700Bold", color: PALETTE },
           headerShadowVisible: false,
           headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} className="ml-2">
-              <ChevronLeft size={24} color={PALETTE} />
+            <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
+              <ChevronLeft size={28} color={PALETTE} />
             </TouchableOpacity>
           ),
           headerRight: () => (
-            <TouchableOpacity onPress={handleShare} className="mr-2">
-              <Share2 size={20} color={PALETTE} />
+            <TouchableOpacity onPress={handleShare} className="p-2 -mr-2">
+              <Share2 size={24} color={PALETTE} />
             </TouchableOpacity>
           ),
         }}
       />
 
-      {/* Hero Section */}
-      <View className="h-56 bg-[#282B4A] items-center justify-center relative">
-        <View className="bg-white/10 p-6 rounded-[40px]">
-          {item.status === "waiting"  && <Timer       size={64} color={PARCHMENT} />}
-          {item.status === "bought"   && <ShoppingBag size={64} color="#10b981" />}
-          {item.status === "forgot"   && <Ghost       size={64} color={`${PARCHMENT}80`} />}
-          {item.status === "snoozed"  && <Timer       size={64} color={`${PARCHMENT}80`} />}
-        </View>
-
-        {/* Status Badge */}
-        <View
-          className="absolute bottom-5 right-5 px-4 py-2 rounded-2xl"
-          style={{ backgroundColor: statusColor }}
-        >
-          <Text className="text-[#EEEBDA] font-bold text-xs uppercase tracking-widest">
-            {item.status}
-          </Text>
-        </View>
-      </View>
-
-      <View className="p-6 -mt-8 bg-[#EEEBDA] rounded-t-[40px]">
-        {/* Title + price */}
-        <View className="flex-row justify-between items-start mb-6">
-          <View className="flex-1 mr-4">
-            <Text className="text-2xl font-fancy text-[#282B4A]">{item.title}</Text>
-            <Text className="text-[#282B4A] text-2xl font-bold mt-1">
-              {item.price?.toLocaleString()} {item.currency}
+      <View className="px-6 pt-4 pb-10">
+        {/* Visual Indicator */}
+        <View className="items-center mb-10">
+          <View className="w-32 h-32 bg-white rounded-[48px] items-center justify-center shadow-sm border border-[#282B4A]/[0.03]">
+            {item.status === "waiting"  && <Timer       size={64} color={PALETTE} opacity={0.7} />}
+            {item.status === "bought"   && <ShoppingBag size={64} color="#10b981" />}
+            {item.status === "forgot"   && <Ghost       size={64} color={`${PALETTE}30`} />}
+          </View>
+          
+          {/* Prominent Status Badge */}
+          <View 
+            className="mt-6 px-6 py-2.5 rounded-2xl shadow-sm" 
+            style={{ backgroundColor: statusColor === PALETTE ? PALETTE : statusColor }}
+          >
+            <Text className="text-[#EEEBDA] font-outfit-bold text-[10px] uppercase tracking-[2px]">
+              {item.status === 'waiting' ? 'Waiting Period' : item.status}
             </Text>
           </View>
-          <View className="bg-[#282B4A]/10 px-3 py-1.5 rounded-xl">
-            <Text className="text-[#282B4A] font-bold text-xs uppercase">{item.delay_type}</Text>
+        </View>
+
+        {/* Title + Price */}
+        <View className="items-center mb-10 px-4">
+          <Text className="text-3xl font-fancy text-[#282B4A] text-center leading-[38px]">{item.title}</Text>
+          <View className="flex-row items-baseline mt-4 bg-[#282B4A]/[0.04] px-5 py-2 rounded-2xl">
+            <Text className="text-[#282B4A] text-3xl font-bold">
+              {item.price?.toLocaleString()}
+            </Text>
+            <Text className="text-lg text-[#282B4A]/60 font-medium ml-1.5">{item.currency}</Text>
           </View>
         </View>
 

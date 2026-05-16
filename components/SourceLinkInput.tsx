@@ -14,11 +14,11 @@ function detectType(url: string): "tiktok" | "instagram" | "web" | null {
 }
 
 interface Props {
-  sourceUrl:         string;
-  onChangeSource:    (v: string) => void;
-  tiktokUrl:         string;
-  onChangeTiktok:    (v: string) => void;
-  instagramUrl:      string;
+  sourceUrl: string;
+  onChangeSource: (v: string) => void;
+  tiktokUrl: string;
+  onChangeTiktok: (v: string) => void;
+  instagramUrl: string;
   onChangeInstagram: (v: string) => void;
 }
 
@@ -31,16 +31,16 @@ export function SourceLinkInput({
 
   const handlePaste = (text: string) => {
     const type = detectType(text);
-    if (type === "tiktok")    { onChangeTiktok(text);    onChangeSource(""); onChangeInstagram(""); }
+    if (type === "tiktok") { onChangeTiktok(text); onChangeSource(""); onChangeInstagram(""); }
     else if (type === "instagram") { onChangeInstagram(text); onChangeSource(""); onChangeTiktok(""); }
-    else if (type === "web")       { onChangeSource(text);    onChangeTiktok(""); onChangeInstagram(""); }
+    else if (type === "web") { onChangeSource(text); onChangeTiktok(""); onChangeInstagram(""); }
     else { onChangeSource(text); }
   };
 
   return (
     <Card className="bg-card border-none shadow-sm">
       <CardContent className="p-4">
-        <Text className="text-[11px] font-bold text-[#282B4A]/40 uppercase tracking-widest mb-3 ml-1">
+        <Text className="text-[11px] font-bold text-primary uppercase tracking-widest mb-3 ml-1">
           Source link (optional)
         </Text>
 
@@ -58,15 +58,15 @@ export function SourceLinkInput({
             placeholderTextColor="rgba(40,43,74,0.3)"
             autoCapitalize="none"
             keyboardType="url"
-            className="flex-1 text-[#282B4A] font-medium text-base h-12 border-none bg-transparent shadow-none px-0"
+            className="flex-1 text-[#282B4A] font-medium text-base h-12 border-0 bg-transparent shadow-none px-0"
           />
         </View>
 
-        <TouchableOpacity 
-          onPress={() => setExpanded(!expanded)} 
+        <TouchableOpacity
+          onPress={() => setExpanded(!expanded)}
           className="mt-4 flex-row items-center justify-between px-2"
         >
-          <Text className="text-[11px] text-[#282B4A]/60 font-bold uppercase tracking-widest">
+          <Text className="text-[11px] text-primary font-bold uppercase tracking-widest">
             {expanded ? "Hide individual links" : "Add multiple links"}
           </Text>
           {expanded ? <ChevronUp size={14} color="rgba(40,43,74,0.4)" /> : <ChevronDown size={14} color="rgba(40,43,74,0.4)" />}

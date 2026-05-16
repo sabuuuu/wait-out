@@ -45,9 +45,9 @@ export default function AddItem() {
   const calculateRemindAt = (type: DelayType): string => {
     const now = new Date();
     switch (type) {
-      case "3d":    return new Date(now.getTime() + 3  * 24 * 60 * 60 * 1000).toISOString();
-      case "7d":    return new Date(now.getTime() + 7  * 24 * 60 * 60 * 1000).toISOString();
-      case "2w":    return new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      case "3d": return new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString();
+      case "7d": return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      case "2w": return new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
       case "payday": {
         // Use the user's configured payday day, falling back to the 1st
         const paydayDay = profile?.payday_day ?? 1;
@@ -234,7 +234,7 @@ export default function AddItem() {
                   value={price}
                   onChangeText={setPrice}
                   keyboardType="decimal-pad"
-                  className="flex-1 h-full text-[16px] font-outfit-bold text-[#282B4A] border-none bg-transparent shadow-none px-0"
+                  className="flex-1 h-full text-[16px] font-outfit-bold text-[#282B4A] border-0 bg-transparent shadow-none px-0"
                   aria-labelledby="price-label"
                 />
                 <Text className="font-outfit-bold text-[#282B4A]/40 text-[13px] ml-2">{currency}</Text>
@@ -307,9 +307,9 @@ export default function AddItem() {
         </View>
       </ScrollView>
 
-      <CollectionPickerModal 
-        visible={isPickerVisible} 
-        onClose={() => setIsPickerVisible(false)} 
+      <CollectionPickerModal
+        visible={isPickerVisible}
+        onClose={() => setIsPickerVisible(false)}
         selectedId={collectionId}
         onSelect={(id) => {
           Haptics.selectionAsync();

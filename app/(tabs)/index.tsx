@@ -170,26 +170,28 @@ export default function Dashboard() {
                 }}
                 activeOpacity={0.9}
               >
-                <View className="mr-4 w-40 h-48 bg-white rounded-[28px] p-5 justify-between border border-[#282B4A]/[0.03] shadow-sm">
-                <View>
-                  <View className="w-10 h-10 rounded-full bg-[#282B4A]/5 items-center justify-center mb-3">
-                    <Timer size={18} color="rgba(40,43,74,0.6)" />
+                <View className="mr-4 w-44 h-32 bg-white rounded-[28px] p-5 justify-between border border-[#282B4A]/[0.03] shadow-sm">
+                  <View className="flex-row justify-between items-start">
+                    <View className="bg-[#282B4A]/[0.05] px-2 py-1 rounded-lg">
+                      <Text className="text-[#282B4A]/60 text-[9px] font-bold uppercase tracking-widest">
+                        {item.delay_type}
+                      </Text>
+                    </View>
+                    <View className="w-8 h-8 rounded-full bg-[#282B4A]/5 items-center justify-center">
+                      <Timer size={14} color="rgba(40,43,74,0.6)" />
+                    </View>
                   </View>
-                  <Text numberOfLines={2} className="text-[#282B4A] font-bold text-sm leading-5">
-                    {item.title}
-                  </Text>
-                </View>
 
-                <View>
-                  <Text className="text-[#282B4A]/50 text-[10px] font-bold uppercase tracking-wider mb-1">
-                    {item.delay_type}
-                  </Text>
-                  <Text className="text-[#282B4A] font-bold text-[15px]">
-                    {item.price?.toLocaleString()} <Text className="text-[11px] text-[#282B4A]/60">{item.currency}</Text>
-                  </Text>
+                  <View>
+                    <Text numberOfLines={1} className="text-[#282B4A] font-bold text-sm">
+                      {item.title}
+                    </Text>
+                    <Text className="text-[#282B4A] font-bold text-base mt-0.5">
+                      {item.price?.toLocaleString()} <Text className="text-[11px] text-[#282B4A]/60">{item.currency}</Text>
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            </TouchableOpacity>
+              </TouchableOpacity>
           </Animated.View>
           ))}
         </ScrollView>

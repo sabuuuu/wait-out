@@ -7,6 +7,7 @@ import { useCollections } from "@/hooks/useCollections";
 import { useProfile } from "@/hooks/useProfile";
 import { useRouter } from "expo-router";
 import { Wallet, BrainCircuit, TrendingDown, ShoppingBag, AlertCircle } from "lucide-react-native";
+import { getCategoryIcon } from "@/lib/utils";
 
 export default function StatsScreen() {
   const insets = useSafeAreaInsets();
@@ -101,7 +102,13 @@ export default function StatsScreen() {
               {collectionStats.map(stat => (
                 <View key={stat.id}>
                   <View className="flex-row justify-between mb-1.5">
-                    <Text className="text-sm font-bold text-[#282B4A]">{stat.emoji} {stat.name}</Text>
+                    <View className="flex-row items-center gap-2">
+                      {(() => {
+                        const Icon = getCategoryIcon(stat.name);
+                        return <Icon size={14} color="#282B4A" opacity={0.6} />;
+                      })()}
+                      <Text className="text-sm font-bold text-[#282B4A]">{stat.name}</Text>
+                    </View>
                     <Text className="text-xs font-bold text-[#282B4A]/60">{stat.impulsePercent}%</Text>
                   </View>
                   <View className="h-2 w-full bg-[#282B4A]/[0.05] rounded-full overflow-hidden">

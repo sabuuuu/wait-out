@@ -11,7 +11,12 @@ export function useItems() {
     queryKey: ["items"],
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return [];
+      console.log('🔍 useItems: Session User ID:', session?.user?.id);
+      
+      if (!session) {
+        console.log('⚠️ useItems: No session found');
+        return [];
+      }
 
       const { data, error } = await supabase
         .from("items")
@@ -19,7 +24,12 @@ export function useItems() {
         .eq("user_id", session.user.id)
         .order("added_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ useItems: Supabase Error:', error);
+        throw error;
+      }
+      
+      console.log(`✅ useItems: Fetched ${data?.length || 0} items`);
       return data as WishlistItem[];
     },
   });

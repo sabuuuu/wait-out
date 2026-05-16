@@ -1,21 +1,20 @@
 import React from "react";
 import { View } from "react-native";
 import { Text } from "@/components/ui/text";
-import { Card } from "@/components/ui/card";
 import { RiskBadge } from "./ui/badge";
-
+import { Sparkles, Info } from "lucide-react-native";
 
 const FACTOR_LABELS: Record<string, string> = {
-  hour_sin: "🌙 Late-night vibes",
-  hour_cos: "🌙 Late-night vibes",
-  price_vs_cat_avg: "💸 Pricier than your usual",
-  session_items_count: "🛒 On a shopping spree",
-  source_tiktok: "📱 TikTok made you do it",
-  source_instagram: "📱 Instagram made you do it",
-  ignored_ratio_cat: "🪦 You usually forget these",
-  cat_tech: "🖥️ Tech = danger zone for you",
-  cat_clothes: "👗 You own enough clothes",
-  is_weekend: "📅 Weekend treat mode",
+  hour_sin: "Late-night decision",
+  hour_cos: "Late-night decision",
+  price_vs_cat_avg: "Above category average",
+  session_items_count: "Shopping spree mode",
+  source_tiktok: "TikTok influence",
+  source_instagram: "Instagram influence",
+  ignored_ratio_cat: "High category neglect",
+  cat_tech: "Tech impulse zone",
+  cat_clothes: "Closet overflow risk",
+  is_weekend: "Weekend spending mode",
 };
 
 export function MLScoreCard({
@@ -34,34 +33,41 @@ export function MLScoreCard({
   const isML = probability !== null;
 
   return (
-    <Card className="bg-[#282B4A]/5 border-[#282B4A]/10">
-      <View className="flex-row items-center justify-between mb-3">
-        <Text className="font-semibold text-[#282B4A] uppercase tracking-wide text-xs">Regret forecast</Text>
+    <View className="bg-white rounded-[32px] p-6 border border-[#282B4A]/[0.05] shadow-sm">
+      <View className="flex-row items-center justify-between mb-4">
         <View className="flex-row items-center gap-2">
-          {isML && labeledCount < 30 && <Text className="text-xs text-[#282B4A]/60">✨ learning your patterns</Text>}
-          {isML && labeledCount >= 30 && <Text className="text-xs text-[#282B4A]/60">✨ personalised</Text>}
-          <RiskBadge risk={risk} score={score} />
+          <Sparkles size={16} color="#282B4A" opacity={0.6} />
+          <Text className="font-bold text-[#282B4A] uppercase tracking-widest text-[10px]">Regret Forecast</Text>
         </View>
+        <RiskBadge risk={risk} score={score} />
       </View>
 
-      {isML && topFactors.length > 0 && (
-        <View className="gap-1 mt-2">
-          <Text className="text-xs text-[#282B4A]/60 font-semibold uppercase tracking-wide mb-1">
-            Why we think so
-          </Text>
+      <View className="h-px w-full bg-[#282B4A]/[0.05] mb-4" />
+
+      {isML && topFactors.length > 0 ? (
+        <View className="gap-3">
           {topFactors.map((f) => (
-            <Text key={f.feature} className="text-sm text-[#282B4A]/80 flex-row items-center before:content-['•'] before:mr-2">
-              • {FACTOR_LABELS[f.feature] ?? f.feature}
-            </Text>
+            <View key={f.feature} className="flex-row items-center gap-2">
+              <View className="w-1.5 h-1.5 rounded-full bg-[#282B4A]/20" />
+              <Text className="text-sm text-[#282B4A]/70 font-medium">
+                {FACTOR_LABELS[f.feature] ?? f.feature}
+              </Text>
+            </View>
           ))}
+          <View className="flex-row items-center gap-1.5 mt-2 bg-[#282B4A]/[0.03] self-start px-3 py-1.5 rounded-full">
+            <Info size={12} color="#282B4A" opacity={0.4} />
+            <Text className="text-[10px] text-[#282B4A]/50 font-bold uppercase tracking-tight">
+              {labeledCount < 30 ? "Learning your patterns" : "Personalised Model"}
+            </Text>
+          </View>
+        </View>
+      ) : (
+        <View className="bg-[#282B4A]/[0.03] p-4 rounded-2xl">
+          <Text className="text-xs text-[#282B4A]/50 leading-5 text-center font-medium">
+            Add and rate 10+ items to unlock your personalised regret prediction model. ✨
+          </Text>
         </View>
       )}
-
-      {!isML && (
-        <Text className="text-xs text-[#282B4A]/60 mt-1">
-          Add 10+ items and rate them to unlock your personalised model ✨
-        </Text>
-      )}
-    </Card>
+    </View>
   );
 }
