@@ -45,9 +45,9 @@ Pausy is a **wishlist app with a conscience**. You add something you want to buy
 
 ## screenshots
 
-| Wishlist | Item Detail | Regret Score | Outcome Prompt |
+| Home | Stats | Regret Score | Create item |
 |---|---|---|---|
-| ![Home](assets/images/Screenshot_1778970622.png) | ![detail](assets/screenshots/item-detail.png) | ![score](assets/screenshots/regret-score.png) | ![outcome](assets/screenshots/outcome-prompt.png) |
+| ![Home](assets/images/Screenshot_1778970622.png) | ![detail](assets/images/Screenshot_1778969441.png) | ![score](assets/images/Screenshot_1778970086.png) | ![outcome](assets/images/Screenshot_1778969437.png) |
 
 ---
 
