@@ -45,8 +45,6 @@ Pausy is a **wishlist app with a conscience**. You add something you want to buy
 
 ## screenshots
 
-> 📸 *drop your screenshots in `assets/screenshots/` and link them here*
-
 | Wishlist | Item Detail | Regret Score | Outcome Prompt |
 |---|---|---|---|
 | ![wishlist](assets/screenshots/wishlist.png) | ![detail](assets/screenshots/item-detail.png) | ![score](assets/screenshots/regret-score.png) | ![outcome](assets/screenshots/outcome-prompt.png) |
