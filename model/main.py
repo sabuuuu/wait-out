@@ -10,9 +10,6 @@ from model import train, predict, FEATURE_KEYS
 app = FastAPI()
 
 supabase = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"])
-
-# The Supabase JWT secret — lives only on the server, never in the client app.
-# Find it in: Supabase dashboard → Settings → API → JWT Secret
 SUPABASE_JWT_SECRET = os.environ["SUPABASE_JWT_SECRET"]
 
 # Minimum seconds between training runs per user (1 hour)
@@ -36,7 +33,7 @@ def verify_token(authorization: Annotated[str, Header()]) -> str:
             token,
             SUPABASE_JWT_SECRET,
             algorithms=["HS256"],
-            options={"verify_aud": False},  # Supabase JWTs don't use a standard aud
+            options={"verify_aud": False}, 
         )
         user_id: str = payload.get("sub")
         if not user_id:
@@ -76,11 +73,11 @@ class TrainingRow(BaseModel):
 
 
 class PredictRequest(BaseModel):
-    features: dict  # user_id comes from the verified JWT, not the request body
+    features: dict
 
 
 class TrainRequest(BaseModel):
-    training_rows: list[TrainingRow]  # user_id comes from the verified JWT
+    training_rows: list[TrainingRow]
 
 
 # ── Storage helpers ───────────────────────────────────────────────────────────
@@ -100,7 +97,7 @@ def save_model(user_id: str, pipeline) -> None:
     supabase.storage.from_("ml-models").upload(
         f"{user_id}/model.pkl",
         buf.read(),
-        file_options={"upsert": True},  # boolean, not string
+        file_options={"upsert": True},
     )
 
 
@@ -155,8 +152,6 @@ def train_endpoint(
     user_id: str = Depends(verify_token),
 ):
     check_train_rate_limit(user_id)
-
-    # Convert validated Pydantic models back to dicts for the training function
     rows = [row.model_dump() for row in req.training_rows]
 
     result = train(rows)
